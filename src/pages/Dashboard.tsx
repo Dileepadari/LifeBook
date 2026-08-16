@@ -44,7 +44,10 @@ export default function Dashboard() {
 
   if (isLoading || !data) return <DashboardSkeleton />;
 
-  const { tiles, week, todays_tasks: todaysTasks, previous_page: prev, habits, due_cards: dueCards } = data;
+  const {
+    tiles, week, todays_tasks: todaysTasks, previous_page: prev,
+    habits, due_cards: dueCards, today_page_exists: todayPageExists,
+  } = data;
   const firstName = (user?.display_name || user?.username || '').split(' ')[0];
 
   const chartData = week.map((d: { date: string; minutes: number; tasks: number; health: number }) => ({
@@ -209,9 +212,26 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {!prev ? (
-              <p className="py-8 text-center text-sm text-paper-foreground/60">
-                No pages yet. Close today with the button in the corner and this fills in.
-              </p>
+              // This card is deliberately the *previous* day, so today's page
+              // never appears here - saying "no pages yet" when one was written
+              // an hour ago is just wrong.
+              todayPageExists ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-paper-foreground/60">
+                    Today's page is written, but there is nothing before it yet. Come back tomorrow
+                    and this is where yesterday lives.
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="mt-4 gap-2">
+                    <Link to={`/lifebook/${todayStr()}`}>
+                      Read today's page <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <p className="py-8 text-center text-sm text-paper-foreground/60">
+                  No pages yet. Close today with the button in the corner and this fills in.
+                </p>
+              )
             ) : (
               <>
                 {prev.title && <p className="font-display text-lg font-semibold">{prev.title}</p>}

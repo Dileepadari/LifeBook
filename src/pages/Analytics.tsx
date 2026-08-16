@@ -14,7 +14,7 @@ import { CardListSkeleton, PageHeaderSkeleton } from '@/components/skeletons/pag
 import { CoachChat } from '@/components/dashboard/CoachChat';
 import { useAnalytics, useGenerateInsights } from '@/hooks/useLifeData';
 import { useChartTheme, chartChrome } from '@/lib/chartTheme';
-import { duration, hours, shortDate, percent, PROVIDER_LABELS, MOOD_LABELS } from '@/lib/format';
+import { duration, shortDate, percent, PROVIDER_LABELS, MOOD_LABELS } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const RANGES = [7, 30, 90];
@@ -74,7 +74,9 @@ export default function Analytics() {
           label="Total focus"
           value={duration(a.study.totalMinutes)}
           delta={a.study.deltaPct}
-          hint={`${hours(a.study.totalMinutes / days)}h a day average`}
+          // duration(), not hours() - "0h a day average" reads as though
+          // nothing was logged when the real figure is a few minutes.
+          hint={`${duration(a.study.totalMinutes / days)} a day average`}
         />
         <Kpi
           label="Plan accuracy"
