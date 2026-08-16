@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
+import { plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useProfile, useSaveProfile } from '@/hooks/useLifeData';
 import { AuthSkeleton } from '@/components/skeletons/pages';
@@ -205,7 +206,7 @@ export default function Onboarding() {
                     value={deepWork}
                     onChange={setDeepWork}
                     min={1} max={10} step={0.5}
-                    format={(v) => `${v} hours a day`}
+                    format={(v) => `${plural(v, 'hour')} a day`}
                     hint="Focused, uninterrupted study - not time at the desk."
                   />
                   <TargetSlider
@@ -213,7 +214,7 @@ export default function Onboarding() {
                     value={sleep}
                     onChange={setSleep}
                     min={5} max={10} step={0.5}
-                    format={(v) => `${v} hours a night`}
+                    format={(v) => `${plural(v, 'hour')} a night`}
                     hint="Everything else on your page moves with this one."
                   />
                   <TargetSlider
@@ -221,7 +222,7 @@ export default function Onboarding() {
                     value={screenTime}
                     onChange={setScreenTime}
                     min={0.5} max={8} step={0.5}
-                    format={(v) => `${v} hours a day`}
+                    format={(v) => `${plural(v, 'hour')} a day`}
                     hint="Recreational only - study on a screen doesn't count."
                   />
                 </CardContent>

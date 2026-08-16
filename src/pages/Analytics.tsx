@@ -14,7 +14,7 @@ import { CardListSkeleton, PageHeaderSkeleton } from '@/components/skeletons/pag
 import { CoachChat } from '@/components/dashboard/CoachChat';
 import { useAnalytics, useGenerateInsights } from '@/hooks/useLifeData';
 import { useChartTheme, chartChrome } from '@/lib/chartTheme';
-import { duration, shortDate, percent, PROVIDER_LABELS, MOOD_LABELS } from '@/lib/format';
+import { duration, shortDate, percent, plural, PROVIDER_LABELS, MOOD_LABELS } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const RANGES = [7, 30, 90];
@@ -81,17 +81,17 @@ export default function Analytics() {
         <Kpi
           label="Plan accuracy"
           value={percent(a.tasks.completionRate)}
-          hint={`${a.tasks.completed} of ${a.tasks.created} tasks`}
+          hint={`${a.tasks.completed} of ${plural(a.tasks.created, 'task')}`}
         />
         <Kpi
           label="Average sleep"
           value={a.wellness.avgSleep != null ? `${a.wellness.avgSleep.toFixed(1)}h` : '-'}
-          hint={a.wellness.daysLogged ? `${a.wellness.daysLogged} days logged` : 'nothing logged'}
+          hint={a.wellness.daysLogged ? `${plural(a.wellness.daysLogged, 'day')} logged` : 'nothing logged'}
         />
         <Kpi
           label="Average mood"
           value={a.mood.average != null ? `${a.mood.average.toFixed(1)}/5` : '-'}
-          hint={a.mood.count ? `${a.mood.lowDays} low days` : 'no check-ins'}
+          hint={a.mood.count ? `${plural(a.mood.lowDays, 'low day')}` : 'no check-ins'}
         />
       </section>
 

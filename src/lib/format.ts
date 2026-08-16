@@ -95,3 +95,9 @@ export const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export const MOOD_LABELS = ['Very low', 'Low', 'Okay', 'Good', 'Great'];
+
+/** "1 day logged", "3 days logged". A stat tile reading "1 days logged" makes
+ *  the whole page look unfinished, and these hints are all generated. */
+export function plural(count: number, singular: string, pluralForm = `${singular}s`) {
+  return `${count} ${Math.abs(count) === 1 ? singular : pluralForm}`;
+}

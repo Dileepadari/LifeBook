@@ -117,6 +117,13 @@ export async function coachChat(message, context, { apiKey, model }) {
   });
 }
 
+/** See the note in gemini.js - same reasoning, and the SDK already has a
+ *  paginated models endpoint. */
+export async function listModels({ apiKey }) {
+  const page = await client(apiKey).models.list({ limit: 100 });
+  return page.data.map((m) => m.id).sort();
+}
+
 /** Cheapest possible round-trip, used by Settings > Test connection. */
 export async function testConnection({ apiKey, model }) {
   const res = await client(apiKey).messages.create({

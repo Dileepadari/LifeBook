@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CardListSkeleton, PageHeaderSkeleton } from '@/components/skeletons/pages';
 import { useWellness, useSaveWellness, useProfile } from '@/hooks/useLifeData';
 import { useChartTheme, chartChrome } from '@/lib/chartTheme';
-import { todayStr, shortDate, clock } from '@/lib/format';
+import { todayStr, shortDate, clock, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { WellnessLog } from '@/lib/api';
 
@@ -203,7 +203,7 @@ export default function Wellness() {
                   <CartesianGrid {...chrome.grid} />
                   <XAxis dataKey="label" {...chrome.axis} />
                   <YAxis {...chrome.axis} width={40} />
-                  <RTooltip {...chrome.tooltip} formatter={(v: number) => [`${v} hours`, 'Sleep']} />
+                  <RTooltip {...chrome.tooltip} formatter={(v: number) => [plural(v, 'hour'), 'Sleep']} />
                   <Area type="monotone" dataKey="sleep" stroke={t.series[0]} strokeWidth={2} fill="url(#sleepFill)" connectNulls />
                 </AreaChart>
               </ResponsiveContainer>
@@ -290,7 +290,7 @@ function MeditationTimer({ onComplete }: { onComplete: (minutes: number) => void
     const mins = Math.round(seconds / 60);
     if (mins > 0) {
       onComplete(mins);
-      toast.success(`${mins} minutes of mindfulness added`);
+      toast.success(`${plural(mins, 'minute')} of mindfulness added`);
     }
     setSeconds(0);
   };

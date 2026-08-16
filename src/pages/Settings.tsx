@@ -154,13 +154,27 @@ function AISection({
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; detail: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [models, setModels] = useState<string[] | null>(null);
 
   useEffect(() => {
     setProvider(settings.ai_provider);
     setModel(settings.ai_model || '');
   }, [settings.ai_provider, settings.ai_model]);
 
+  // Model names move faster than any list we could ship, and a stale name is a
+  // valid key that fails on every request - which is a genuinely confusing way
+  // to be broken. So ask the provider what this key can actually call.
+  useEffect(() => {
+    if (provider === 'builtin' || (!settings.has_ai_key && !key.trim())) { setModels(null); return; }
+    let live = true;
+    insights.aiModels(key.trim() ? { provider, apiKey: key.trim() } : { provider })
+      .then((res) => { if (live) setModels(res.models); })
+      .catch(() => { if (live) setModels(null); });
+    return () => { live = false; };
+  }, [provider, settings.has_ai_key, key]);
+
   const defaultModel = status?.defaults?.[provider] || '';
+  const modelUnknown = Boolean(model.trim() && models?.length && !models.includes(model.trim()));
 
   const commit = async () => {
     setSaving(true);
@@ -239,14 +253,26 @@ function AISection({
             <Label htmlFor="model">Model</Label>
             <Input
               id="model"
+              list="ai-model-options"
               value={model}
-              onChange={(e) => setModel(e.target.value)}
+              onChange={(e) => { setModel(e.target.value); setResult(null); }}
               placeholder={defaultModel || 'provider default'}
               disabled={provider === 'builtin'}
+              aria-invalid={modelUnknown || undefined}
+              className={cn(modelUnknown && 'border-destructive focus-visible:ring-destructive')}
             />
-            {defaultModel && !model && (
-              <p className="text-xs text-muted-foreground">Defaults to {defaultModel}.</p>
-            )}
+            <datalist id="ai-model-options">
+              {(models || []).map((m) => <option key={m} value={m} />)}
+            </datalist>
+            {modelUnknown ? (
+              <p className="text-xs text-destructive">
+                This key cannot call {model.trim()}. Pick one from the list, or clear the field to use {defaultModel}.
+              </p>
+            ) : defaultModel && !model ? (
+              <p className="text-xs text-muted-foreground">
+                Defaults to {defaultModel}.{models?.length ? ` ${models.length} models available on this key.` : ''}
+              </p>
+            ) : null}
           </div>
         </div>
 

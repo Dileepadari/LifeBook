@@ -2,8 +2,13 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+// `min-w-0` is a deliberate addition to stock shadcn. Cards are nearly always
+// grid or flex items here, where the default `min-width: auto` means a card
+// refuses to shrink below its widest child - and a Recharts container reports a
+// stale pixel width, so on a phone one chart card would push the entire page
+// into a horizontal scroll. A card should never be wider than what holds it.
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
+  <div ref={ref} className={cn("min-w-0 rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
 ));
 Card.displayName = "Card";
 

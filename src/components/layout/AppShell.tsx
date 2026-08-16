@@ -146,7 +146,11 @@ export function AppShell() {
           </div>
         </aside>
 
-        <div className="flex min-h-screen flex-1 flex-col">
+        {/* min-w-0 is load-bearing: a flex child defaults to min-width:auto and
+            refuses to shrink below its content's intrinsic width, so without it
+            one wide chart or habit row pushes the whole page into a horizontal
+            scroll on a phone. */}
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           {/* Mobile top bar */}
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur md:hidden">
             <Link to="/dashboard" className="flex items-center gap-2">

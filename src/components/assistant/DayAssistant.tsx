@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-  Send, Loader2, Undo2, X, Check, CircleAlert, ListTodo, HeartPulse,
+  Send, Loader2, Undo2, X, Check, CircleAlert, ListTodo, HeartPulse, RotateCcw, Mic, Square,
   BookOpenCheck, Smile, Sparkles, PenLine,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDayAssistant } from '@/hooks/useLifeData';
-import { PROVIDER_LABELS } from '@/lib/format';
+import { PROVIDER_LABELS, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import type { DayProposal, UndoToken } from '@/lib/api';
+import type { DayProposal, DayResolve, DayConflict, UndoToken } from '@/lib/api';
 import logoMark from '@/assets/logo-mark.png';
 
 /**
@@ -54,7 +54,7 @@ const WELLNESS_LABELS: Record<string, (v: number) => string> = {
   sleep_hours: (v) => `${v}h sleep`,
   exercise_minutes: (v) => `${v} min exercise`,
   screen_time_hours: (v) => `${v}h screen time`,
-  water_glasses: (v) => `${v} glasses of water`,
+  water_glasses: (v) => `${plural(v, 'glass', 'glasses')} of water`,
   meditation_minutes: (v) => `${v} min meditation`,
   had_breakfast: (v) => (v ? 'had breakfast' : 'skipped breakfast'),
 };
@@ -80,17 +80,117 @@ function Chip({ icon: Icon, children, tone }: {
   );
 }
 
-/** Everything the server said it understood, grouped the way the user said it. */
+// The Web Speech API is not in TypeScript's DOM lib, and in Chrome it is still
+// vendor-prefixed. Only the handful of members used below are declared.
+interface SpeechRecognitionLike extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+  onend: (() => void) | null;
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  }
+}
+
+/**
+ * Dictation for the day brief.
+ *
+ * This is the one input in the app people most want to talk at - describing a
+ * day out loud is faster than typing it, and it happens at the end of the day
+ * when nobody wants to type. Uses the browser's own recogniser, so there is no
+ * extra key, no upload from our server, and nothing to configure.
+ *
+ * Returns `supported: false` rather than a button that does nothing, because a
+ * dead mic is worse than no mic.
+ */
+function useDictation(onText: (text: string) => void) {
+  const [listening, setListening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const recognition = useRef<SpeechRecognitionLike | null>(null);
+  const base = useRef('');
+  const supported = typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  const stop = () => {
+    recognition.current?.stop();
+    recognition.current = null;
+    setListening(false);
+  };
+
+  // Recognition holds the microphone open, so it has to be released when the
+  // panel closes or the component goes away - not just when the user stops it.
+  useEffect(() => () => recognition.current?.stop(), []);
+
+  const start = (current: string) => {
+    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Ctor) return;
+    setError(null);
+    base.current = current;
+
+    const rec = new Ctor();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || 'en-US';
+
+    rec.onresult = (e) => {
+      // Rebuild the whole transcript each time rather than appending: interim
+      // results are revised as you keep talking, so appending would stutter.
+      let text = '';
+      for (let i = 0; i < e.results.length; i += 1) text += e.results[i][0].transcript;
+      const prefix = base.current && !/\s$/.test(base.current) ? `${base.current} ` : base.current;
+      onText(prefix + text.trimStart());
+    };
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        setError('Microphone access was blocked. Allow it in your browser and try again.');
+      } else if (e.error !== 'aborted' && e.error !== 'no-speech') {
+        setError('Dictation stopped unexpectedly.');
+      }
+      stop();
+    };
+    rec.onend = () => setListening(false);
+
+    recognition.current = rec;
+    rec.start();
+    setListening(true);
+  };
+
+  return { supported, listening, error, start, stop };
+}
+
+const RESOLVE_VERB: Record<DayResolve['action'], string> = {
+  done: 'Ticking off',
+  reopen: 'Reopening',
+  flag: 'Bumping to important',
+};
+
+/** Everything the server said it understood, grouped the way the user said it.
+ *  Anything the user chose to keep as it was drops out, so the card never
+ *  claims a change that was declined. */
 function ProposalCard({ p }: { p: DayProposal }) {
-  const wellness = Object.entries(p.wellness || {});
+  const kept = new Set((p.conflicts || []).filter((c) => c.decision === 'keep').map((c) => c.key));
+  const wellness = Object.entries(p.wellness || {}).filter(([f]) => !kept.has(`wellness.${f}`));
   const nothing =
     !p.tasks.length && !p.completed.length && !p.missed.length && !wellness.length &&
-    !p.mood && !p.study && !p.journal && !p.gratitude.length;
+    !p.mood && (!p.study || kept.has('study')) && !p.journal && !p.gratitude.length && !p.resolve?.length;
 
   if (nothing) return null;
 
   return (
     <div className="mt-2 flex flex-col gap-1.5">
+      {/* Changes to tasks that already exist come first - they are the ones a
+          user most needs to see, because they alter something they wrote. */}
+      {(p.resolve || []).map((r) => (
+        <Chip key={`r-${r.task_id}`} icon={r.action === 'flag' ? CircleAlert : RotateCcw} tone={r.action === 'done' ? 'done' : 'missed'}>
+          <span className="opacity-70">{RESOLVE_VERB[r.action]}:</span> {r.title}
+        </Chip>
+      ))}
       {p.completed.map((t) => <Chip key={`c-${t}`} icon={Check} tone="done">{t}</Chip>)}
       {p.tasks.map((t) => (
         <Chip key={`t-${t.title}`} icon={ListTodo} tone="todo">
@@ -104,7 +204,7 @@ function ProposalCard({ p }: { p: DayProposal }) {
           {wellness.map(([k, v]) => WELLNESS_LABELS[k]?.(v as number) ?? `${k}: ${v}`).join(' · ')}
         </Chip>
       )}
-      {p.study && (
+      {p.study && !kept.has('study') && (
         <Chip icon={BookOpenCheck} tone="neutral">
           {p.study.minutes} min{p.study.subject ? ` of ${p.study.subject}` : ''}
           {p.study.focus_rating ? ` · focus ${p.study.focus_rating}/5` : ''}
@@ -113,6 +213,38 @@ function ProposalCard({ p }: { p: DayProposal }) {
       {p.mood && <Chip icon={Smile} tone="neutral">Mood {p.mood.score}/5{p.mood.note ? ` · ${p.mood.note}` : ''}</Chip>}
       {p.gratitude.map((g) => <Chip key={`g-${g}`} icon={Sparkles} tone="neutral">Grateful: {g}</Chip>)}
       {p.journal && <Chip icon={PenLine} tone="neutral">Added to your journal</Chip>}
+    </div>
+  );
+}
+
+/**
+ * The one place the assistant stops and asks.
+ *
+ * Everything else it does is reversible with one Undo, which is why auto-apply
+ * is defensible. Overwriting a number you logged by hand earlier is different:
+ * the old value is what you actually measured, and "I slept 5" typed at
+ * midnight should not quietly replace the 7 you entered this morning. So a
+ * disagreement becomes a question, and nothing at all is written until it is
+ * answered.
+ */
+function ConflictQuestion({ c, onDecide }: { c: DayConflict; onDecide: (d: 'overwrite' | 'keep') => void }) {
+  return (
+    <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5">
+      <p className="text-xs leading-snug">
+        {c.additive ? (
+          <>You already have <strong>{c.existing}</strong>. Log <strong>{c.proposed}</strong> as well, or is this the same block?</>
+        ) : (
+          <>Your {c.label} is already logged as <strong>{c.existing}</strong>. Change it to <strong>{c.proposed}</strong>?</>
+        )}
+      </p>
+      <div className="mt-2 flex gap-2">
+        <Button size="sm" className="h-6 px-2 text-xs" disabled={c.decision !== null} onClick={() => onDecide('overwrite')}>
+          {c.additive ? 'Add it' : 'Change it'}
+        </Button>
+        <Button size="sm" variant="outline" className="h-6 px-2 text-xs" disabled={c.decision !== null} onClick={() => onDecide('keep')}>
+          {c.additive ? 'Same block' : `Keep ${c.existing}`}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -126,6 +258,11 @@ export function DayAssistant() {
   const reduceMotion = useReducedMotion();
   const endRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
+  const mic = useDictation(setInput);
+
+  // Closing the panel must release the microphone; leaving it live behind a
+  // hidden UI is exactly the kind of thing that earns a permanent block.
+  useEffect(() => { if (!open) mic.stop(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
@@ -141,14 +278,26 @@ export function DayAssistant() {
     patch(turnId, { undo: res.undo, applied: res.applied, undone: false });
   };
 
+  /** Records a decision and, once none are outstanding, writes. */
+  const decide = async (turn: Turn, key: string, decision: 'overwrite' | 'keep') => {
+    const proposal: DayProposal = {
+      ...turn.proposal!,
+      conflicts: turn.proposal!.conflicts.map((c) => (c.key === key ? { ...c, decision } : c)),
+    };
+    patch(turn.id, { proposal });
+    if (auto && proposal.conflicts.every((c) => c.decision)) await applyProposal(turn.id, proposal);
+  };
+
   const send = async (raw: string) => {
     const message = raw.trim();
     if (message.length < 4 || busy) return;
+    mic.stop();
     setInput('');
+    const history = turns.map(({ role, text }) => ({ role, text }));
     setTurns((ts) => [...ts, { id: nextId.current++, role: 'user', text: message }]);
 
     try {
-      const res = await parse.mutateAsync({ message });
+      const res = await parse.mutateAsync({ message, history });
       const turnId = nextId.current++;
       setTurns((ts) => [...ts, {
         id: turnId,
@@ -158,7 +307,9 @@ export function DayAssistant() {
         provider: res.provider,
         degradedFrom: res.degradedFrom,
       }]);
-      if (auto) await applyProposal(turnId, res.proposal);
+      // A proposal with an open question is not ready to write, whatever the
+      // auto setting says.
+      if (auto && !res.proposal.conflicts.length) await applyProposal(turnId, res.proposal);
     } catch (err) {
       setTurns((ts) => [...ts, {
         id: nextId.current++,
@@ -274,6 +425,10 @@ export function DayAssistant() {
                       <div className="w-full max-w-[92%]">
                         <ProposalCard p={turn.proposal} />
 
+                        {!turn.applied && !turn.undone && turn.proposal.conflicts?.map((c) => (
+                          <ConflictQuestion key={c.key} c={c} onDecide={(d) => decide(turn, c.key, d)} />
+                        ))}
+
                         {/* Applied: report exactly what was written, and offer
                             the reversal while it is still fresh. */}
                         {turn.applied && !turn.undone && (
@@ -304,11 +459,11 @@ export function DayAssistant() {
                           <Button
                             size="sm"
                             className="mt-2 h-7 text-xs"
-                            disabled={apply.isPending}
+                            disabled={apply.isPending || turn.proposal.conflicts?.some((c) => !c.decision)}
                             onClick={() => applyProposal(turn.id, turn.proposal!)}
                           >
                             {apply.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Check className="mr-1 h-3 w-3" />}
-                            Save this
+                            {turn.proposal.conflicts?.some((c) => !c.decision) ? 'Answer above first' : 'Save this'}
                           </Button>
                         )}
                       </div>
@@ -348,14 +503,40 @@ export function DayAssistant() {
                       send(input);
                     }
                   }}
-                  placeholder="Rough day. Slept 5 hours, finished the problem set..."
+                  placeholder={mic.listening ? 'Listening - just talk...' : 'Rough day. Slept 5 hours, finished the problem set...'}
                   rows={2}
                   className="max-h-32 min-h-[2.75rem] resize-none text-sm"
                 />
+                {mic.supported && (
+                  <Button
+                    size="icon"
+                    variant={mic.listening ? 'default' : 'outline'}
+                    className={cn('relative h-10 w-10 shrink-0', mic.listening && 'bg-destructive text-destructive-foreground hover:bg-destructive/90')}
+                    aria-label={mic.listening ? 'Stop dictating' : 'Dictate your day'}
+                    aria-pressed={mic.listening}
+                    onClick={() => (mic.listening ? mic.stop() : mic.start(input))}
+                  >
+                    {mic.listening && !reduceMotion && (
+                      <motion.span
+                        aria-hidden
+                        className="absolute inset-0 rounded-md bg-destructive"
+                        animate={{ opacity: [0.5, 0, 0.5], scale: [1, 1.3, 1] }}
+                        transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                      />
+                    )}
+                    {mic.listening ? <Square className="relative h-3.5 w-3.5 fill-current" /> : <Mic className="relative h-4 w-4" />}
+                  </Button>
+                )}
                 <Button size="icon" className="h-10 w-10 shrink-0" disabled={busy || input.trim().length < 4} onClick={() => send(input)}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
+              {mic.error && <p className="mt-1.5 text-xs text-destructive">{mic.error}</p>}
+              {mic.listening && !mic.error && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Recognised by your browser. Press stop when you are done, then send.
+                </p>
+              )}
             </div>
           </motion.aside>
         )}

@@ -161,6 +161,8 @@ Rules that matter:
 - Keep task titles under 80 characters and free of leading verbs like "I need to".
 - If they mention a duration vaguely ("a couple of hours"), convert to your best numeric estimate. If there is no basis for a number at all, leave the field out.
 - reply: one or two warm, specific sentences back to them, naming what you picked up. No emoji.
+- Only name a study subject if they named it in this message. Their usual subjects are not evidence about today - leave it out rather than guessing.
+- Omit any wellness field they did not mention. Never use 0 to mean "not mentioned" - 0 is a real measurement, and writing it would overwrite what they logged earlier.
 - Never tell them to press, confirm or apply anything. Saving may already have happened by the time they read the reply, so instructions about buttons read as nonsense.`;
 
 export const DAYBRIEF_SCHEMA = {
@@ -222,11 +224,18 @@ export const DAYBRIEF_SCHEMA = {
 };
 
 export function dayBriefPrompt(message, context) {
+  // Earlier turns come first so a correction ("no, chemistry not physics") or a
+  // reference ("the second one") resolves against what was actually said. Only
+  // the newest message is the instruction; the rest is background.
+  const history = context.history?.length
+    ? `Earlier in this conversation:\n${context.history.map((t) => `${t.role === 'user' ? 'They' : 'You'}: ${t.text}`).join('\n')}\n\n`
+    : '';
+
   return `Today is ${context.date}. Here is what is already logged for today, so you do not duplicate it:\n${JSON.stringify(
     context.alreadyLogged,
     null,
     2,
-  )}\n\nThey said:\n"""\n${message}\n"""`;
+  )}\n\n${history}They just said:\n"""\n${message}\n"""\n\nExtract only from that last message, but read it in the light of what came before - a correction replaces what it corrects rather than adding to it.`;
 }
 
 export const COACH_SYSTEM = `You are the study coach inside LifeBook. You are given the student's real, current numbers and one question.

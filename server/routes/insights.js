@@ -138,6 +138,15 @@ insightRoutes.post('/ai/test', async (req, res) => {
   }
 });
 
+insightRoutes.post('/ai/models', async (req, res) => {
+  try {
+    res.json(await ai.listModels(req.user.id, req.body));
+  } catch (err) {
+    // Same reasoning as /ai/test: not being able to list is an answer.
+    res.json({ models: [], error: humanizeProviderError(err) });
+  }
+});
+
 /**
  * Provider SDKs put the whole JSON error body in `message`, which is accurate
  * and unreadable. Map the handful of cases a user can actually act on to plain

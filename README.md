@@ -47,6 +47,14 @@ A small assistant sits in the corner of every screen. Tell it about your day the
 
 It shows you every row it wrote and keeps an **Undo** next to it, so a misread sentence costs one click. If you would rather read before it writes, turn *Auto* off and the same card grows a Save button instead. It will not turn a feeling into a task: say "I feel behind on everything" and you get a mood entry, not five invented chores.
 
+It also works on what is already there rather than piling up beside it:
+
+- **It closes tasks you already have.** "Finished revising thermodynamics" ticks off the *Revise thermodynamics* card on your board - it does not add a second one marked done. A to-do you mention that already exists is skipped; one you finished last week and mention again is reopened.
+- **It asks before overwriting.** If your sleep is already logged as 6.5h and you now say four, it stops and asks which is right, with both numbers in front of you. Nothing is written until you answer, and you answer per number - change the sleep, keep the exercise.
+- **It remembers the conversation.** "Sorry, that was organic chemistry, and closer to three hours" corrects the block you just logged instead of being read as a fresh one.
+
+There is a **mic** next to the send button, so you can just talk at it. That one uses your browser's own speech recognition rather than anything LifeBook runs - which means it needs no key, but also that in Chrome the audio goes to Google to be transcribed. If you would rather it did not, type instead; the button hides itself entirely in browsers that have no recogniser.
+
 ### Study Now
 A real focus timer that writes a real row: planned versus actual minutes, technique, subject, an honest focus rating and an interruption count. That rating is the number every insight about your focus is built from.
 

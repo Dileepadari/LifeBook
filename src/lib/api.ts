@@ -418,11 +418,32 @@ export const lifebook = {
 
 // --- day assistant ---
 
+/** An existing task the brief refers to, and what should happen to it. */
+export interface DayResolve {
+  task_id: string;
+  title: string;
+  action: 'done' | 'reopen' | 'flag';
+  was: string;
+}
+
+/** A value already logged that the brief disagrees with. Nothing is written
+ *  until `decision` is set, so this is a real question rather than a warning. */
+export interface DayConflict {
+  key: string;
+  label: string;
+  existing: string;
+  proposed: string;
+  additive?: boolean;
+  decision: 'overwrite' | 'keep' | null;
+}
+
 export interface DayProposal {
   reply: string;
   tasks: { title: string; priority: TaskPriority; category: string }[];
   completed: string[];
   missed: string[];
+  resolve: DayResolve[];
+  conflicts: DayConflict[];
   wellness: Partial<Record<'sleep_hours' | 'exercise_minutes' | 'screen_time_hours' | 'water_glasses' | 'meditation_minutes' | 'had_breakfast', number>>;
   mood: { score: number; note: string | null } | null;
   study: { subject: string | null; minutes: number; focus_rating: number | null } | null;
@@ -441,8 +462,12 @@ export interface ApplyResult {
 }
 
 export const assistant = {
-  parse: (message: string, date?: string): Promise<{ proposal: DayProposal } & AIMeta> =>
-    jsonCall('/assistant/parse', 'POST', { message, date }),
+  parse: (
+    message: string,
+    history?: { role: 'user' | 'assistant'; text: string }[],
+    date?: string,
+  ): Promise<{ proposal: DayProposal } & AIMeta> =>
+    jsonCall('/assistant/parse', 'POST', { message, history, date }),
   apply: (proposal: DayProposal, date?: string): Promise<ApplyResult> =>
     jsonCall('/assistant/apply', 'POST', { proposal, date }),
   undo: (undo: UndoToken) => jsonCall('/assistant/undo', 'POST', { undo }),
@@ -466,4 +491,6 @@ export const insights = {
   readNotifications: () => jsonCall('/notifications/read', 'POST', {}),
   aiStatus: () => call('/ai/status'),
   testAI: (body?: { provider?: string; apiKey?: string; model?: string }) => jsonCall('/ai/test', 'POST', body || {}),
+  aiModels: (body?: { provider?: string; apiKey?: string }): Promise<{ provider?: string; models: string[]; error?: string }> =>
+    jsonCall('/ai/models', 'POST', body || {}),
 };

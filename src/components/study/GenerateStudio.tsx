@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useGenerate, useResources, useAIStatus } from '@/hooks/useLifeData';
-import { PROVIDER_LABELS } from '@/lib/format';
+import { PROVIDER_LABELS, plural } from '@/lib/format';
 import type { MindMapData } from '@/components/study/MindMapView';
 import { MindMapView } from '@/components/study/MindMapView';
 
@@ -44,7 +44,7 @@ export function GenerateStudio() {
     try {
       if (kind === 'cards') {
         const res = await cards.mutateAsync({ ...body(), count });
-        toast.success(`${res.cards.length} cards created`, {
+        toast.success(`${plural(res.cards.length, 'card')} created`, {
           description: `${PROVIDER_LABELS[res.provider]} - they are in your review queue now.`,
         });
       } else if (kind === 'quiz') {

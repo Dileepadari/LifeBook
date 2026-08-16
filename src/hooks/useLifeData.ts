@@ -374,7 +374,11 @@ export function useDayAssistant() {
   };
 
   const parse = useMutation({
-    mutationFn: ({ message, date }: { message: string; date?: string }) => assistant.parse(message, date),
+    mutationFn: ({ message, history, date }: {
+      message: string;
+      history?: { role: 'user' | 'assistant'; text: string }[];
+      date?: string;
+    }) => assistant.parse(message, history, date),
   });
 
   const apply = useMutation({

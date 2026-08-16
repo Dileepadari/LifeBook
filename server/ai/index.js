@@ -121,6 +121,27 @@ export async function testConnection(userId, override) {
   return { ok: true, provider: provider.name, detail: `Connected to ${result.model}.` };
 }
 
+/**
+ * The models the resolved (or supplied) key can actually call. Same resolution
+ * rules as testConnection, so pressing Test and opening the model list agree
+ * about which key is in play.
+ */
+export async function listModels(userId, override) {
+  const provider = override?.apiKey
+    ? {
+        name: override.provider && override.provider !== 'auto'
+          ? override.provider
+          : override.apiKey.startsWith('sk-ant-') ? 'anthropic' : 'gemini',
+        apiKey: override.apiKey,
+      }
+    : override?.provider && override.provider !== 'auto'
+      ? { name: override.provider, apiKey: resolveProvider(userId).apiKey }
+      : resolveProvider(userId);
+
+  if (provider.name === 'builtin' || !provider.apiKey) return { provider: provider.name, models: [] };
+  return { provider: provider.name, models: await PROVIDERS[provider.name].listModels({ apiKey: provider.apiKey }) };
+}
+
 export const DEFAULT_MODELS = {
   anthropic: anthropic.DEFAULT_MODEL,
   gemini: gemini.DEFAULT_MODEL,
