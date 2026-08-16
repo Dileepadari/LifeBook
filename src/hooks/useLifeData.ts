@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   tasks, resources, decks, habitsApi, goalVisions, sosContacts,
-  study, day, lifebook, insights, profile, settings,
+  study, day, lifebook, insights, profile, settings, assistant,
+  type DayProposal, type UndoToken,
   type Task, type Habit, type Challenge, type LifePage, type Badge,
   type FeedPost, type Resource, type Deck, type Flashcard, type Mood,
   type JournalEntry, type WellnessLog, type Profile, type Settings,
@@ -354,6 +355,39 @@ export function useSaveMotivation() {
     mutationFn: (id: string) => insights.saveMotivation(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['motivation'] }),
   });
+}
+
+// --- day assistant ---
+//
+// Applying a brief can touch tasks, wellness, a study session, a mood and the
+// journal in one transaction, so both apply and undo invalidate the same wide
+// set. Undo has to invalidate too, or the board keeps showing rows the server
+// has already deleted.
+const ASSISTANT_KEYS = ['tasks', 'wellness', 'sessions', 'moods', 'journal', 'journal-list'];
+
+export function useDayAssistant() {
+  const qc = useQueryClient();
+  const invalidate = useInvalidate();
+  const refreshAll = () => {
+    ASSISTANT_KEYS.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+    invalidate();
+  };
+
+  const parse = useMutation({
+    mutationFn: ({ message, date }: { message: string; date?: string }) => assistant.parse(message, date),
+  });
+
+  const apply = useMutation({
+    mutationFn: ({ proposal, date }: { proposal: DayProposal; date?: string }) => assistant.apply(proposal, date),
+    onSuccess: (res) => { refreshAll(); celebrate(res.awarded); },
+  });
+
+  const undo = useMutation({
+    mutationFn: (token: UndoToken) => assistant.undo(token),
+    onSuccess: refreshAll,
+  });
+
+  return { parse, apply, undo };
 }
 
 export const useGoalVisions = () => useQuery({ queryKey: ['goal-visions'], queryFn: goalVisions.list });

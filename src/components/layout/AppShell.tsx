@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { GeneratePageButton } from '@/components/lifebook/GeneratePageButton';
+import { DayAssistant } from '@/components/assistant/DayAssistant';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 
@@ -208,10 +209,12 @@ export function AppShell() {
         </div>
       </div>
 
-      {/* Today's page is the product's one recurring action, so it lives on
-          every screen rather than only on the Dashboard. */}
-      <div className="fixed bottom-6 right-6 z-40 no-print">
+      {/* The two things you can do from anywhere: talk about your day, and turn
+          it into today's page. They share one corner stack so neither covers
+          the other on a narrow screen. */}
+      <div className="fixed bottom-6 right-4 z-40 flex flex-col items-end gap-3 no-print md:right-6">
         <GeneratePageButton />
+        <DayAssistant />
       </div>
     </div>
   );

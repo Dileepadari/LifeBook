@@ -111,6 +111,17 @@ export async function generateMindMap(text, title, { apiKey, model }) {
   });
 }
 
+export async function parseDayBrief(message, context, { apiKey, model }) {
+  return complete({
+    apiKey,
+    model,
+    system: P.DAYBRIEF_SYSTEM,
+    prompt: P.dayBriefPrompt(message, context),
+    schema: P.DAYBRIEF_SCHEMA,
+    maxTokens: 4000,
+  });
+}
+
 export async function coachChat(message, context, { apiKey, model }) {
   return complete({
     apiKey,

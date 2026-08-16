@@ -42,6 +42,11 @@ Log through the day, then close the day. LifeBook reads everything you recorded 
 ### Close the day
 One button, on every screen. It reads that day's sessions, tasks, sleep, movement, habits, mood and journal, and writes a dated page. Pages can be **sealed** once you have read them - a sealed page is what gets bound into a printed book, so LifeBook refuses to quietly rewrite one.
 
+### Just say it
+A small assistant sits in the corner of every screen. Tell it about your day the way you would tell a friend - "slept 5 hours, finished the problem set, still haven't done the ML assignment, need to book the exam slot" - and it files the whole thing: to-dos onto the board, finished things as completed, the ones you missed as an honest backlog, the sleep and screen time into Health Booster, the study block into your focus history, the mood into your check-ins, the gratitude into your journal.
+
+It shows you every row it wrote and keeps an **Undo** next to it, so a misread sentence costs one click. If you would rather read before it writes, turn *Auto* off and the same card grows a Save button instead. It will not turn a feeling into a task: say "I feel behind on everything" and you get a mood entry, not five invented chores.
+
 ### Study Now
 A real focus timer that writes a real row: planned versus actual minutes, technique, subject, an honest focus rating and an interruption count. That rating is the number every insight about your focus is built from.
 

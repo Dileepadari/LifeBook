@@ -457,6 +457,177 @@ export function coachChat(message, context) {
   } tasks closed, ${habits.total} habits running, best streak ${streak} days. Ask me about focus, sleep, planning, habits or exam prep and I will answer from these numbers.`;
 }
 
+// ------------------------------------------------------------ day brief --
+
+/**
+ * Rule-based extraction from a free-text description of the day. Weaker than an
+ * LLM at nuance, but it genuinely works offline, which keeps the promise that
+ * no feature is a dead button.
+ *
+ * The approach is conservative on purpose: it only claims an item when a clear
+ * lexical signal is present, because a wrong task silently written into
+ * someone's board is worse than a missed one.
+ */
+export function parseDayBrief(message, context) {
+  const text = String(message || '').trim();
+  const sentences = text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const tasks = [];
+  const completed = [];
+  const missed = [];
+  const gratitude = [];
+  const wellness = {};
+  const study = {};
+  let moodScore = null;
+
+  // --- numbers ---
+  const num = (re) => {
+    const m = text.match(re);
+    if (!m) return null;
+    const word = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, half: 0.5, an: 1, a: 1 };
+    const raw = m[1].toLowerCase();
+    const value = /^[\d.]+$/.test(raw) ? parseFloat(raw) : word[raw];
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const sleep = num(/(?:slept|sleep|got)\s+(?:about\s+|around\s+|roughly\s+)?([\d.]+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:and a half\s*)?h(?:ou)?rs?/i);
+  if (sleep != null) wellness.sleep_hours = /and a half/i.test(text) ? sleep + 0.5 : sleep;
+
+  const exercise = num(/(?:ran|walked|gym|worked out|exercis\w+|trained|cycled)[^.]{0,40}?([\d.]+|one|two|three|four|five|ten)\s*(?:min|minute)/i);
+  if (exercise != null) wellness.exercise_minutes = exercise;
+  else if (/\b(went to the gym|worked out|did a workout|went for a run|played (football|cricket|badminton|tennis))\b/i.test(text)) {
+    wellness.exercise_minutes = 30;
+  }
+
+  const screen = num(/([\d.]+|one|two|three|four|five|six)\s*h(?:ou)?rs?\s+(?:of\s+)?(?:screen|scrolling|instagram|youtube|reels|social media|phone)/i)
+    ?? num(/(?:scroll\w*|instagram|youtube|reels|social media|on my phone)[^.]{0,30}?([\d.]+|one|two|three|four|five|six)\s*h(?:ou)?rs?/i);
+  if (screen != null) wellness.screen_time_hours = screen;
+
+  const water = num(/([\d.]+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:glass|glasses|litre|liter)/i);
+  if (water != null) wellness.water_glasses = water;
+
+  const meditation = num(/(?:meditat\w+|breathing|mindfulness)[^.]{0,30}?([\d.]+|one|two|three|four|five|ten)\s*(?:min|minute)/i);
+  if (meditation != null) wellness.meditation_minutes = meditation;
+  else if (/\b(meditated|did my meditation|breathing exercise)\b/i.test(text)) wellness.meditation_minutes = 10;
+
+  if (/\b(had|ate)\s+breakfast\b/i.test(text)) wellness.had_breakfast = true;
+  if (/\b(skipped|missed|no)\s+breakfast\b/i.test(text)) wellness.had_breakfast = false;
+
+  // --- study session ---
+  const studyMinutes = num(/(?:stud\w+|revis\w+|read|worked on|practis\w+|practic\w+)[^.]{0,60}?([\d.]+|one|two|three|four|five|six)\s*h(?:ou)?rs?/i);
+  const studyMins2 = num(/(?:stud\w+|revis\w+|read|worked on)[^.]{0,60}?([\d.]+|ten|twenty|thirty|forty|fifty)\s*(?:min|minute)/i);
+  if (studyMinutes != null) study.minutes = Math.round(studyMinutes * 60);
+  else if (studyMins2 != null) study.minutes = studyMins2;
+  if (study.minutes) {
+    const subject = text.match(/(?:stud\w+|revis\w+|worked on|read(?:ing)?)\s+(?:some\s+|the\s+|my\s+)?([A-Z][\w&+ -]{2,28}?)(?:\s+for|\s+today|[.,]|$)/);
+    if (subject) study.subject = subject[1].trim();
+  }
+
+  // --- mood ---
+  const veryLow = /\b(awful|terrible|miserable|breaking down|hopeless|worst day|really low|burnt out|burned out)\b/i;
+  const low = /\b(low|down|sad|anxious|stressed|overwhelmed|exhausted|drained|rough|behind|guilty|frustrated)\b/i;
+  const high = /\b(great|amazing|brilliant|excellent|fantastic|productive|proud|energised|energized)\b/i;
+  const okay = /\b(okay|ok|alright|fine|decent|not bad)\b/i;
+  if (veryLow.test(text)) moodScore = 1;
+  else if (low.test(text)) moodScore = 2;
+  else if (high.test(text)) moodScore = 5;
+  else if (okay.test(text)) moodScore = 3;
+
+  // --- sentence classification ---
+  const DONE = /\b(finished|completed|submitted|did|done|managed to|got through|wrapped up|handed in|cleared|solved|attended|went to)\b/i;
+  const MISSED = /\b(didn'?t|did not|couldn'?t|could not|failed to|skipped|missed|forgot|never got (?:to|around)|avoided|put off|procrastinated)\b/i;
+  const TODO = /\b(need to|have to|should|must|todo|to-do|tomorrow|still have|planning to|going to|want to|remember to)\b/i;
+  const GRATEFUL = /\b(grateful|thankful|glad|appreciated|nice that|good thing)\b/i;
+
+  const clean = (s) =>
+    s
+      .replace(/^(?:and|but|so|then|also|i|i'?ve|i have|i also)\s+/i, '')
+      .replace(/\b(?:i\s+)?(?:need to|have to|should|must|want to|am going to|going to|plan to|planning to|remember to)\s+/i, '')
+      .replace(/\b(?:i\s+)?(?:didn'?t|did not|couldn'?t|could not|failed to)\s+/i, '')
+      .replace(/[.!?]+$/, '')
+      .trim();
+
+  const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+  // A sentence that is only reporting body numbers ("slept 5 hours and skipped
+  // breakfast") is already captured in `wellness`. Without this guard the word
+  // "skipped" also drags it into the backlog as a task, which is how someone
+  // ends up with "Slept about 5 hours" sitting on their board.
+  // Note the sentence still carries its terminating punctuation at this point,
+  // so the trailing group has to allow for it.
+  const WELLNESS_ONLY = /^[^.!?]*\b(?:slept|sleep|breakfast|lunch|dinner|water|glasses|gym|workout|meditat\w+|screen time|scrolling|instagram|steps)\b[^.!?]*[.!?]*\s*$/i;
+  const ACTIONABLE = /\b(assignment|report|submit|email|call|read|revise|study|book|register|apply|meet|finish|prepare|practice|practise|clean|pay|buy|plan|write|code|project|lab|quiz|exam|slides|notes)\b/i;
+
+  // Split on conjunctions so "didn't do X and never did Y" becomes two items.
+  const clauses = sentences.flatMap((s) =>
+    s.split(/,?\s+and\s+(?=(?:i|I)\b|never|didn'?t|did not)/).map((c) => c.trim()).filter(Boolean),
+  );
+
+  for (const sentence of clauses) {
+    const body = clean(sentence);
+    if (!body || body.length < 3) continue;
+    const short = body.length > 90 ? `${body.slice(0, 87)}...` : body;
+
+    if (GRATEFUL.test(sentence)) {
+      gratitude.push(cap(short));
+      continue;
+    }
+    // Pure body-metric reporting is already in `wellness` - do not double-book
+    // it as a task unless there is a genuinely actionable noun in there too.
+    if (WELLNESS_ONLY.test(sentence) && !ACTIONABLE.test(sentence)) continue;
+
+    // Order matters: "didn't finish" contains a DONE word, so MISSED wins.
+    if (MISSED.test(sentence)) {
+      missed.push(cap(short));
+      continue;
+    }
+    if (TODO.test(sentence)) {
+      tasks.push({
+        title: cap(short),
+        priority: /\b(urgent|asap|today|due|deadline)\b/i.test(sentence) ? 'urgent' : 'normal',
+        category: /\b(gym|sleep|eat|run|walk|health|meditat)\b/i.test(sentence)
+          ? 'wellness'
+          : /\b(club|society|rehearsal|fest|volunteer|event)\b/i.test(sentence)
+            ? 'ECA'
+            : 'academic',
+      });
+      continue;
+    }
+    if (DONE.test(sentence)) completed.push(cap(short));
+  }
+
+  const picked = [];
+  if (tasks.length) picked.push(`${tasks.length} to do`);
+  if (completed.length) picked.push(`${completed.length} done`);
+  if (missed.length) picked.push(`${missed.length} missed`);
+  if (Object.keys(wellness).length) picked.push('some numbers');
+  if (study.minutes) picked.push('a study block');
+
+  const reply = picked.length
+    // Deliberately does not tell the user to press anything: the client may
+    // have auto-apply on, in which case this is already saved by the time they
+    // read it, and "apply what looks right" would be nonsense.
+    ? `Got it - I picked up ${listify(picked)}.`
+    : "I could not find anything concrete in that. Try mentioning what you finished, what you didn't get to, and how long you slept or studied.";
+
+  return {
+    reply,
+    tasks,
+    completed,
+    missed,
+    wellness,
+    mood: moodScore ? { score: moodScore, note: null } : {},
+    study,
+    // The built-in engine does not rewrite prose - the user's own words are
+    // better raw material for the page than anything a template could produce.
+    journal: text.length > 40 ? text : null,
+    gratitude,
+  };
+}
+
 // ---------------------------------------------------------------- utils --
 
 /** A trailing "s" is not enough on its own: "physics", "thermodynamics",

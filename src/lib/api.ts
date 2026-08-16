@@ -416,6 +416,38 @@ export const lifebook = {
   order: (payload: Record<string, unknown>) => jsonCall('/lifebook/orders', 'POST', payload),
 };
 
+// --- day assistant ---
+
+export interface DayProposal {
+  reply: string;
+  tasks: { title: string; priority: TaskPriority; category: string }[];
+  completed: string[];
+  missed: string[];
+  wellness: Partial<Record<'sleep_hours' | 'exercise_minutes' | 'screen_time_hours' | 'water_glasses' | 'meditation_minutes' | 'had_breakfast', number>>;
+  mood: { score: number; note: string | null } | null;
+  study: { subject: string | null; minutes: number; focus_rating: number | null } | null;
+  journal: string | null;
+  gratitude: string[];
+}
+
+/** Opaque to the client - it is handed straight back to /undo. */
+export type UndoToken = Record<string, unknown>;
+
+export interface ApplyResult {
+  applied: string[];
+  undo: UndoToken;
+  health_points: number;
+  awarded?: { name: string; description: string }[];
+}
+
+export const assistant = {
+  parse: (message: string, date?: string): Promise<{ proposal: DayProposal } & AIMeta> =>
+    jsonCall('/assistant/parse', 'POST', { message, date }),
+  apply: (proposal: DayProposal, date?: string): Promise<ApplyResult> =>
+    jsonCall('/assistant/apply', 'POST', { proposal, date }),
+  undo: (undo: UndoToken) => jsonCall('/assistant/undo', 'POST', { undo }),
+};
+
 // --- insights ---
 
 export const insights = {

@@ -82,6 +82,9 @@ Two shapes of endpoint:
 | `POST /api/day/challenges/:id/checkin` | May complete an enrollment and award a badge |
 | `PUT  /api/day/wellness/:date` | Upsert, one row per day |
 | `POST /api/study/resources/upload` | Writes to disk |
+| `POST /api/assistant/parse` | Calls a provider; returns a proposal and writes nothing |
+| `POST /api/assistant/apply` | Writes across five tables in one transaction |
+| `POST /api/assistant/undo` | Reverses a specific apply by row id |
 
 Quiz answers are withheld from `GET /api/study/quizzes/:id` and only returned with the attempt result - otherwise the answers sit in the network tab of the page taking the test.
 
@@ -106,7 +109,7 @@ Roughly thirty tables in six groups:
 
 ```
 generateLifePage / generateInsights / generateFlashcards
-  / generateQuiz / generateMindMap / coachChat
+  / generateQuiz / generateMindMap / coachChat / parseDayBrief
         │
         ├─ anthropic.js   claude-opus-5, adaptive thinking, effort: medium,
         │                 output_config.format for JSON, refusal-aware
@@ -117,6 +120,19 @@ generateLifePage / generateInsights / generateFlashcards
 **Every capability has all three implementations behind one interface, and any provider failure falls back to `deterministic`.** The provider that actually produced a result is returned alongside it and stored on the row, so a page always says who wrote it and the UI can be honest about degradation instead of pretending the key worked.
 
 Shared prompts and JSON schemas live in `server/ai/prompts.js` so switching provider changes the voice, never the shape. Gemini's `responseSchema` is OpenAPI-flavoured rather than full JSON Schema - it rejects `additionalProperties` and expresses nullability as `nullable: true` - so `gemini.js` translates the shared schemas rather than maintaining a second copy.
+
+### The day assistant
+
+`parseDayBrief` is the one capability whose output becomes *rows* rather than prose, so it is split across two routes on purpose. `/assistant/parse` calls the provider and returns a proposal without writing anything; `/assistant/apply` writes it and returns an undo token listing every id it created or changed. That split is what makes auto-apply defensible: the client can write immediately, show exactly what it wrote, and reverse it precisely rather than asking the user to hunt five tables.
+
+Mapping decisions, all in `server/routes/assistant.js`:
+
+- `completed` becomes tasks already `done` with `completed_at` set, so finished things count toward the completion tile and show up on the page as achievements.
+- `missed` becomes still-open tasks at `important` priority. "Didn't get to X" *is* a backlog item; dropping it on the floor would be the wrong reading.
+- `wellness` upserts only the fields actually mentioned - `cleanNumbers()` drops nulls and non-numerics so an unmentioned field never overwrites a real logged value with 0.
+- `journal` **appends** to the day's reflection rather than replacing it; the user may already have written something.
+
+The deterministic implementation is the interesting one, because it has to do this without a model. It splits on sentence boundaries *and* on conjunctions (`didn't do X and never did Y` is two items), then classifies each clause. The guard worth knowing about is `WELLNESS_ONLY`: a sentence like "slept about 5 hours and skipped breakfast" is already fully captured as wellness numbers, so it must not *also* be filed as a missed task - unless it contains a genuinely actionable noun too. Sentences still carry their terminating punctuation at that point, which the regex has to allow for.
 
 The key is stored server-side in `settings.ai_key` and is **write-only from the browser's perspective**: `GET /api/auth/settings` returns `has_ai_key` and a masked hint, never the value. It is also excluded from the JSON export.
 
@@ -163,6 +179,7 @@ src/
   pages/                one file per route, PascalCase, default export
   components/
     ui/                 shadcn primitives, kebab-case (generated; don't hand-edit)
+    assistant/          DayAssistant - the corner orb and its panel
     layout/             AppShell, NotificationsBell
     lifebook/           LifePage (shared by screen and print), GeneratePageButton
     study/              StudyTimer, FlashcardReview, GenerateStudio, MindMapView

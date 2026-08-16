@@ -83,6 +83,10 @@ export function generateMindMap(userId, text, title) {
   return run(userId, 'generateMindMap', [text, title], () => builtin.generateMindMap(text, title));
 }
 
+export function parseDayBrief(userId, message, context) {
+  return run(userId, 'parseDayBrief', [message, context], () => builtin.parseDayBrief(message, context));
+}
+
 export function coachChat(userId, message, context) {
   return run(userId, 'coachChat', [message, context], () => builtin.coachChat(message, context));
 }

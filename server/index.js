@@ -9,6 +9,7 @@ import { studyRoutes } from './routes/study.js';
 import { dayRoutes } from './routes/day.js';
 import { lifebookRoutes } from './routes/lifebook.js';
 import { insightRoutes } from './routes/insights.js';
+import { assistantRoutes } from './routes/assistant.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..');
@@ -40,6 +41,7 @@ app.use('/api/data', dataRoutes);
 app.use('/api/study', studyRoutes);
 app.use('/api/day', dayRoutes);
 app.use('/api/lifebook', lifebookRoutes);
+app.use('/api/assistant', assistantRoutes);
 app.use('/api', insightRoutes);
 
 // In production the SPA build is served by the same process, so a deployment
