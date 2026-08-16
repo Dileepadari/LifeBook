@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Tailwind v4 has no JS config file - dark mode is a variant targeting the
+   .dark class (same behavior as the old darkMode: ["class"] JS config). */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  /* Book surfaces - the paper the LifeBook is printed on. Deliberately outside
+     the accent-palette system: the shell can be any colour the user picks, but
+     a page of a book is always paper. */
+  --color-paper: hsl(var(--paper));
+  --color-paper-foreground: hsl(var(--paper-foreground));
+  --color-paper-edge: hsl(var(--paper-edge));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+@layer base {
+  :root {
+    /* Light theme - default "Violet" palette, tuned toward the ADK Dev brand
+       mark (#47266B). Full palette list lives in src/contexts/ThemeContext.tsx;
+       these vars are just the initial paint before that context applies its own
+       inline overrides. */
+    --background: 0 0% 100%;
+    --foreground: 264 45% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 264 45% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 264 45% 12%;
+    --primary: 268 47% 28%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 268 30% 96%;
+    --secondary-foreground: 264 45% 12%;
+    --muted: 268 24% 96%;
+    --muted-foreground: 264 12% 46%;
+    --accent: 288 42% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 152 60% 32%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+    --border: 268 20% 90%;
+    --input: 268 20% 90%;
+    --ring: 268 47% 28%;
+    --radius: 0.6rem;
+
+    --paper: 40 38% 96%;
+    --paper-foreground: 30 25% 16%;
+    --paper-edge: 38 26% 86%;
+  }
+
+  .dark {
+    --background: 264 30% 7%;
+    --foreground: 270 20% 96%;
+    --card: 264 28% 10%;
+    --card-foreground: 270 20% 96%;
+    --popover: 264 28% 10%;
+    --popover-foreground: 270 20% 96%;
+    --primary: 265 70% 72%;
+    --primary-foreground: 264 40% 10%;
+    --secondary: 264 20% 18%;
+    --secondary-foreground: 270 20% 96%;
+    --muted: 264 20% 18%;
+    --muted-foreground: 264 12% 66%;
+    --accent: 292 60% 68%;
+    --accent-foreground: 264 40% 10%;
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 152 55% 48%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 90% 58%;
+    --warning-foreground: 0 0% 10%;
+    --border: 264 20% 20%;
+    --input: 264 20% 20%;
+    --ring: 265 70% 72%;
+
+    /* Paper goes warm-dark rather than white-on-black - a lit page at night,
+       not an inverted document. */
+    --paper: 30 12% 13%;
+    --paper-foreground: 36 24% 88%;
+    --paper-edge: 30 12% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Display face, used only on book surfaces and marketing headings. */
+  .font-display {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+  }
+
+  .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+  .slide-up { animation: slideUp 0.4s ease-out forwards; }
+
+  .hover-lift {
+    @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* The wash behind the welcome screen and the LifeBook shelf. Three soft
+     radial tints rather than a linear gradient, so it reads as light falling
+     on paper instead of a banner. */
+  .book-wash {
+    background-image:
+      radial-gradient(60rem 40rem at 12% 8%, hsl(var(--primary) / 0.14), transparent 60%),
+      radial-gradient(50rem 36rem at 88% 12%, hsl(var(--accent) / 0.12), transparent 62%),
+      radial-gradient(46rem 34rem at 50% 96%, hsl(var(--primary) / 0.10), transparent 60%);
+  }
+
+  /* A LifePage. The left edge carries a gutter shadow so a page reads as bound
+     into a spine rather than floating as a card. */
+  .page-surface {
+    background-color: hsl(var(--paper));
+    color: hsl(var(--paper-foreground));
+    border: 1px solid hsl(var(--paper-edge));
+    box-shadow:
+      inset 14px 0 22px -18px hsl(var(--paper-edge)),
+      0 10px 30px -12px hsl(264 40% 10% / 0.16);
+  }
+
+  .page-rule {
+    border-bottom: 1px solid hsl(var(--paper-edge));
+  }
+
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+}
+
+/* Every motion in the app is decorative - none of it conveys information that
+   is not also in the DOM - so honouring the OS setting costs nothing. Framer
+   Motion reads this too via useReducedMotion; this rule covers the CSS ones. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===========================
+   PRINT
+   ===========================
+   /lifebook/print renders the whole book and hands it to the browser's own
+   PDF export. Chrome is the print engine; this stylesheet is the binding. */
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 14mm 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    color: #14110f !important;
+  }
+
+  .no-print { display: none !important; }
+
+  .print-page {
+    break-after: page;
+    page-break-after: always;
+    box-shadow: none !important;
+    border: none !important;
+    background: #fff !important;
+    color: #14110f !important;
+  }
+  .print-page:last-child { break-after: auto; page-break-after: auto; }
+
+  /* Don't strand a heading at the foot of a page. */
+  h1, h2, h3 { break-after: avoid; page-break-after: avoid; }
+}
+
+/* ===========================
+   LOGO MONOCHROME
+   ===========================
+   logo-mark.png (the same ADK Dev mark used in portfolio, workos and moneyos)
+   is a solid brand-violet mark on a transparent background - invisible against
+   dark surfaces in dark mode, and clashing with whichever accent palette the
+   user has picked if left its native purple. brightness(0) flattens any opaque
+   pixel to black while preserving the alpha shape; invert(1) flips that to
+   white for dark mode, so it always reads against the current theme. */
+.logo-mono {
+  filter: brightness(0);
+}
+.dark .logo-mono {
+  filter: brightness(0) invert(1);
+}
