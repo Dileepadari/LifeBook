@@ -193,6 +193,95 @@
     border-bottom: 1px solid hsl(var(--paper-edge));
   }
 
+  /* ---- The bound book -------------------------------------------------
+     A real page turn needs three things a crossfade cannot fake: the sheet
+     must pivot on the spine rather than the middle of the screen, it must
+     have two distinct faces, and it must lose light as it lifts. These
+     classes carry the geometry and the light; BookReader drives the angle. */
+
+  /* Paper for a page that lives inside the book, without the drop shadow a
+     free-standing card wants - inside a book the shadow comes from the spine
+     and the sheet above it, not from the page itself. */
+  .book-leaf {
+    background-color: hsl(var(--paper));
+    color: hsl(var(--paper-foreground));
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* The gutter. A page curves into the spine, so the ink there sits in shade;
+     the falloff is steep and short, which is what stops it reading as a
+     vignette. Verso and recto shade from opposite edges. */
+  .book-leaf-recto::after,
+  .book-leaf-verso::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .book-leaf-recto::after {
+    background: linear-gradient(
+      to right,
+      hsl(30 30% 20% / 0.20) 0,
+      hsl(30 30% 20% / 0.07) 1.6%,
+      transparent 7%
+    );
+  }
+  .book-leaf-verso::after {
+    background: linear-gradient(
+      to left,
+      hsl(30 30% 20% / 0.20) 0,
+      hsl(30 30% 20% / 0.07) 1.6%,
+      transparent 7%
+    );
+  }
+
+  /* The stack of sheets you have already read, and the ones still to come.
+     The book visibly gets heavier on the left as you read forward, which is
+     the cheapest honest signal of where you are in it. */
+  .book-edges {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 0;
+    pointer-events: none;
+    border-right: 1px solid hsl(var(--paper-edge));
+    border-left: 1px solid hsl(var(--paper-edge));
+    background: repeating-linear-gradient(
+      to right,
+      hsl(var(--paper)) 0 1px,
+      hsl(var(--paper-edge) / 0.55) 1px 2px
+    );
+  }
+
+  /* The board the book is open on. */
+  .book-board {
+    background:
+      radial-gradient(70% 60% at 50% 0%, hsl(var(--primary) / 0.10), transparent 70%),
+      radial-gradient(60% 60% at 50% 100%, hsl(var(--accent) / 0.08), transparent 70%);
+  }
+
+  /* Content inside a leaf scrolls rather than being cut off. A day with a lot
+     in it is not a reason to hide half of it, and the mask keeps the bottom
+     edge from looking like a hard crop. */
+  .book-leaf-scroll {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--paper-edge)) transparent;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 2.5rem), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 2.5rem), transparent 100%);
+  }
+  .book-leaf-scroll::-webkit-scrollbar { width: 6px; }
+  .book-leaf-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--paper-edge));
+    border-radius: 3px;
+  }
+
   .tabular-nums { font-variant-numeric: tabular-nums; }
 }
 

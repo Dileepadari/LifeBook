@@ -79,7 +79,9 @@ A mood check-in with trigger tags, three coping actions with evidence behind the
 Focus over time, focus by weekday, time by subject, and the correlations from *your own logs* - whether your focus really does track last night's sleep, whether screen time really is costing you. Every insight quotes the number it came from. There is a table view of the same data.
 
 ### Your LifeBook
-Read the whole book a page at a time, jump to any day, export a print-ready PDF at A5, and record an order for a bound copy.
+The book opens as a spread - yesterday on the left, today on the right - and turns like one. The sheet hinges on the spine rather than sliding, carries one page on each face, loses light as it stands up and casts a shadow across whatever it passes over, so a turn advances two pages the way a real book does. You can also just grab a page and drag it over; let go past halfway, or flick it, and it finishes on its own.
+
+Below a spread's worth of width it becomes a single leaf hinged at the left, and with reduced motion turned on it simply changes page. Jump to any day from the index, export a print-ready PDF at A5, and record an order for a bound copy.
 
 ### Also
 Resources (upload notes, tag them, and feed the text ones to the generators), Motivation Hub (quotes, affirmations and stories drawn from the research, plus your own goal board), Your Feed (research digests you can save, and posts anyone on the instance writes), Badges (thirteen, all measured from real rows - none can be clicked into existence), and a Profile where your goals and targets live.
@@ -105,6 +107,14 @@ npm run dev
 ```
 
 Then open <http://localhost:8082> and create an account. The API runs on <http://localhost:4000>; `npm run dev` starts both.
+
+A brand new account has an empty book, which is correct but shows very little - the reader, the trends and the correlations only say anything once there is a run of days behind them. To look around a book that already has some life in it:
+
+```sh
+npm run seed:demo       # user: demo, password: lifebook123
+```
+
+That writes 24 days of study blocks, sleep, tasks, habits, moods and journal entries, then generates a LifePage for each through the same engine the app uses. The days are shaped, not random: there is a slump in the middle and an exam push at the end, and focus follows the previous night's sleep and screen time - so the analytics have something true to report rather than noise. Add `-- --reset` to rebuild the account from scratch.
 
 For a single-process deployment:
 

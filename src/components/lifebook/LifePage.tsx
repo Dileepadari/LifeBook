@@ -6,12 +6,24 @@ import { cn } from '@/lib/utils';
 import type { LifePage as LifePageType } from '@/lib/api';
 
 /**
- * One page of the book. Shared by the single-page view and the print view, so
- * what you read on screen is exactly what gets bound - `printMode` only strips
- * the interactive chrome, never the content.
+ * One page of the book. Shared by the single-page view, the reader and the
+ * print view, so what you read on screen is exactly what gets bound - neither
+ * `printMode` nor `variant` ever removes content, only chrome and width.
+ *
+ * `variant="book"` is the half-width leaf inside the open spread: the same
+ * page set in a narrower measure, with the columns stacked and the entry
+ * animation dropped, because in the reader the page turn is the animation.
  */
-export function LifePage({ page, printMode }: { page: LifePageType; printMode?: boolean }) {
+export function LifePage({
+  page, printMode, variant = 'full',
+}: {
+  page: LifePageType;
+  printMode?: boolean;
+  variant?: 'full' | 'book';
+}) {
   const reduceMotion = useReducedMotion();
+  const book = variant === 'book';
+  const still = reduceMotion || printMode || book;
   const m = page.metrics || {};
 
   const metrics = [
@@ -27,11 +39,15 @@ export function LifePage({ page, printMode }: { page: LifePageType; printMode?: 
 
   return (
     <motion.article
-      initial={reduceMotion || printMode ? false : { opacity: 0, y: 12 }}
+      initial={still ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
         'page-surface mx-auto w-full max-w-3xl rounded-xl p-8 sm:p-12',
+        // Inside the reader the leaf itself is the paper, so the page drops
+        // its own border, shadow and rounding rather than drawing a card on
+        // top of a card.
+        book && 'max-w-none rounded-none border-0 bg-transparent p-7 shadow-none sm:p-9',
         printMode && 'print-page max-w-none rounded-none p-0',
       )}
     >
@@ -55,31 +71,43 @@ export function LifePage({ page, printMode }: { page: LifePageType; printMode?: 
           )}
         </div>
         {page.title && (
-          <h2 className="font-display mt-2 text-3xl font-semibold leading-tight sm:text-4xl">
+          <h2 className={cn(
+            'font-display mt-2 font-semibold leading-tight',
+            book ? 'text-2xl' : 'text-3xl sm:text-4xl',
+          )}>
             {page.title}
           </h2>
         )}
       </header>
 
       {page.summary && (
-        <p className="font-display mt-6 text-lg leading-relaxed text-paper-foreground/90">
+        <p className={cn(
+          'font-display mt-6 leading-relaxed text-paper-foreground/90',
+          book ? 'text-base' : 'text-lg',
+        )}>
           {page.summary}
         </p>
       )}
 
       {metrics.length > 0 && (
-        <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+        <dl className={cn(
+          'mt-8 grid grid-cols-2 gap-x-6 gap-y-4',
+          book ? 'sm:grid-cols-2' : 'sm:grid-cols-4',
+        )}>
           {metrics.map((metric, i) => (
             <motion.div
               key={metric.label}
-              initial={reduceMotion || printMode ? false : { opacity: 0, y: 8 }}
+              initial={still ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 + i * 0.04 }}
             >
               <dt className="text-[0.65rem] uppercase tracking-wider text-paper-foreground/50">
                 {metric.label}
               </dt>
-              <dd className="font-display mt-0.5 text-xl font-semibold tabular-nums">{metric.value}</dd>
+              <dd className={cn(
+                'font-display mt-0.5 font-semibold tabular-nums',
+                book ? 'text-lg' : 'text-xl',
+              )}>{metric.value}</dd>
             </motion.div>
           ))}
         </dl>
@@ -89,11 +117,14 @@ export function LifePage({ page, printMode }: { page: LifePageType; printMode?: 
         <img
           src={page.photo_url}
           alt=""
-          className="mt-8 max-h-80 w-full rounded-lg border border-paper-edge object-cover"
+          className={cn(
+            'mt-8 w-full rounded-lg border border-paper-edge object-cover',
+            book ? 'max-h-56' : 'max-h-80',
+          )}
         />
       )}
 
-      <div className="mt-8 grid gap-8 sm:grid-cols-2">
+      <div className={cn('mt-8 grid gap-8', !book && 'sm:grid-cols-2')}>
         {page.achievements?.length > 0 && (
           <Section icon={TrendingUp} title="Achievements of the day" items={page.achievements} />
         )}

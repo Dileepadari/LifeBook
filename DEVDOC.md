@@ -13,6 +13,7 @@ Technical reference for the LifeBook codebase: architecture, auth model, data mo
 - [The insight engine](#the-insight-engine)
 - [Theming system](#theming-system)
 - [Charts](#charts)
+- [The book reader](#the-book-reader)
 - [Frontend structure](#frontend-structure)
 - [Environment variables](#environment-variables)
 - [Local development](#local-development)
@@ -177,6 +178,17 @@ The palette was validated against this app's real surfaces (light `#ffffff`, dar
 
 **Four slots is the cap.** A fifth puts yellow beside orange, which fails the all-pairs floor. If a chart needs more series, facet instead of extending the palette.
 
+## The book reader
+
+`src/components/lifebook/BookReader.tsx` is the only place in the app that does real 3D. Two constraints shaped it, and both are easy to reintroduce by accident:
+
+- **`overflow` on a `transform-style: preserve-3d` element forces it flat.** Per spec, any non-`visible` overflow makes the element a grouping context and collapses its 3D children onto one plane - the turn silently degrades to a 2D slide with no error anywhere. The clip that stops a swinging leaf widening the page on mobile therefore lives on an *ancestor of the perspective*, never on the sheet. If you ever need to round or clip the sheet, do it on the faces.
+- **A turn must not depend on the animation promise alone.** Browsers pause `requestAnimationFrame` in a background tab, which stalls the animation and never resolves it. Since a turn in flight blocks the next one, the reader would stay locked on whatever page it was on when the user switched away. `runTurn` settles on whichever comes first, the animation or a timer, guarded by a sequence number so a superseded turn cannot land twice.
+
+The page geometry: a spread at position `s` shows page `2s-1` on the left and `2s` on the right, so a sheet carries two pages and a turn advances two, as in a real book. `resolveLayout` derives every slot from `(spread, turn, spreadMode)` rather than storing them, so the resting state and the animating state cannot drift apart. Below 1024px there is no room for a spread and it falls back to one leaf at a time.
+
+Lighting is `1 - |cos t|` rather than a sine of the progress. That distinction is visible: the cosine keeps the page near fully lit through the early part of the turn and collapses it only near edge-on, which is what paper does. A sine greys the page the instant it starts moving and reads as a crossfade, which is the exact impression the component exists to avoid.
+
 ## Frontend structure
 
 ```
@@ -244,6 +256,8 @@ npm run preview
 ```
 
 To reset to a clean database, delete `server/data/` - the schema and all seed catalogs are recreated on next boot.
+
+`npm run seed:demo` (`server/seedDemo.js`) builds a `demo` account with 24 days of activity and a generated LifePage per day, which is what makes the reader, the trends and the correlations worth looking at. The generator is a seeded PRNG, so a reseed produces the same book; the days carry a deliberate slump-then-push arc and derive focus ratings from the previous night's sleep and screen time, so the correlation the insight engine reports is actually present in the data rather than asserted over noise. Pass `-- --reset` to rebuild the account.
 
 ## Deployment
 

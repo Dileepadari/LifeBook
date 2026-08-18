@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { BookOpen, Printer, Package, Lock, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { useReducedMotion } from 'framer-motion';
+import { BookOpen, Printer, Package, Lock, ChevronRight, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CardListSkeleton, PageHeaderSkeleton } from '@/components/skeletons/pages';
-import { LifePage } from '@/components/lifebook/LifePage';
+import { BookReader } from '@/components/lifebook/BookReader';
 import { useLifePages, useLifeBookStats } from '@/hooks/useLifeData';
 import { longDate, shortDate, relativeDay, PROVIDER_LABELS } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,6 @@ export default function LifeBookShelf() {
   const { data: pages = [], isLoading } = useLifePages();
   const { data: stats } = useLifeBookStats();
   const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
   const reduceMotion = useReducedMotion();
 
   if (isLoading) {
@@ -46,10 +45,6 @@ export default function LifeBookShelf() {
   }
 
   const page = ordered[Math.min(index, ordered.length - 1)];
-  const go = (delta: number) => {
-    setDirection(delta);
-    setIndex((i) => Math.max(0, Math.min(ordered.length - 1, i + delta)));
-  };
 
   return (
     <div className="space-y-6">
@@ -89,41 +84,10 @@ export default function LifeBookShelf() {
         </div>
       )}
 
-      {/* The reader. One page at a time with a turn animation, because the
-          product's whole claim is that this is a book rather than a feed. */}
+      {/* The reader. A bound book with a real turn, because the product's
+          whole claim is that this is a book rather than a feed. */}
       <div className="relative">
-        <div className="mb-4 flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={() => go(-1)} disabled={index === 0} className="gap-1.5">
-            <ChevronLeft className="h-4 w-4" /> Earlier
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Page <span className="tabular-nums">{index + 1}</span> of{' '}
-            <span className="tabular-nums">{ordered.length}</span>
-          </p>
-          <Button
-            variant="outline" size="sm"
-            onClick={() => go(1)}
-            disabled={index >= ordered.length - 1}
-            className="gap-1.5"
-          >
-            Later <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div style={{ perspective: 1800 }}>
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={page.date}
-              initial={reduceMotion ? false : { opacity: 0, rotateY: direction >= 0 ? 18 : -18, x: direction >= 0 ? 60 : -60 }}
-              animate={{ opacity: 1, rotateY: 0, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, rotateY: direction >= 0 ? -18 : 18, x: direction >= 0 ? -60 : 60 }}
-              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformStyle: 'preserve-3d' }}
-            >
-              <LifePage page={page} />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+        <BookReader pages={ordered} index={index} onIndexChange={setIndex} />
 
         <div className="mt-4 flex justify-center">
           <Button asChild variant="ghost" size="sm" className="gap-2">
@@ -145,7 +109,7 @@ export default function LifeBookShelf() {
               <button
                 key={p.id}
                 type="button"
-                onClick={() => { setDirection(0); setIndex(ordered.findIndex((o) => o.date === p.date)); window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }); }}
+                onClick={() => { setIndex(ordered.findIndex((o) => o.date === p.date)); window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }); }}
                 className={cn(
                   'rounded-lg border p-3 text-left transition-colors hover:bg-muted',
                   p.date === page.date ? 'border-primary bg-primary/5' : 'border-border',

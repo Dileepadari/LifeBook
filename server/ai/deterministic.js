@@ -467,8 +467,11 @@ export function coachChat(message, context) {
  * The approach is conservative on purpose: it only claims an item when a clear
  * lexical signal is present, because a wrong task silently written into
  * someone's board is worse than a missed one.
+ *
+ * `_context` is unused here but kept so all three providers share one
+ * signature; the LLM paths need the snapshot, the lexical path does not.
  */
-export function parseDayBrief(message, context) {
+export function parseDayBrief(message, _context) {
   const text = String(message || '').trim();
   const sentences = text
     .split(/(?<=[.!?])\s+|\n+/)
