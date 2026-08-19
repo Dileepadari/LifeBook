@@ -231,10 +231,18 @@ export function BookReader({
           <Edges side="left" count={spread} total={maxSpread} />
           <Edges side="right" count={maxSpread - spread} total={maxSpread} />
 
-          <div
+          {/* The pan gesture lives on the frame rather than on an overlay
+              above the pages. An overlay would sit between the pointer and the
+              leaves and swallow their wheel events, so a page taller than the
+              book would scroll the whole document instead of itself. Pointer
+              events from the leaves bubble up to here, so the drag still works
+              and the pages stay scrollable and selectable. */}
+          <motion.div
             ref={frameRef}
             className="relative w-full rounded-lg shadow-[0_26px_64px_-26px_hsl(264_40%_10%/0.5)]"
-            style={{ height: 'min(76vh, 780px)' }}
+            style={{ height: 'min(76vh, 780px)', touchAction: 'pan-y' }}
+            onPan={onPan}
+            onPanEnd={onPanEnd}
           >
             {/* Board: whatever the sheet in the air is uncovering. */}
             {spreadMode && (
@@ -296,15 +304,6 @@ export function BookReader({
               />
             </motion.div>
 
-            {/* An invisible grab handle over the resting pages, so a drag can
-                start a turn that has not begun yet. */}
-            <motion.div
-              className={cn('absolute inset-0 z-[15]', turn && 'pointer-events-none')}
-              onPan={onPan}
-              onPanEnd={onPanEnd}
-              style={{ touchAction: 'pan-y' }}
-            />
-
             {/* The spine, drawn over the sheet's landing edge - that overlap is
                 what keeps the two halves reading as one bound object. */}
             {spreadMode && (
@@ -317,7 +316,7 @@ export function BookReader({
                 }}
               />
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -450,8 +449,27 @@ function LeafContent({ page, pageNumber }: { page: LifePageType | null; pageNumb
       </div>
     );
   }
+  return <ScrollableLeaf page={page} pageNumber={pageNumber} />;
+}
+
+/**
+ * A page is a fixed box, but a day with a lot in it is taller than the box.
+ * Cutting the day off would be worse than letting the page scroll, so it
+ * scrolls, with a mask at the bottom edge so it does not read as a hard crop.
+ *
+ * The scroll position has to be reset when the page changes: these leaves are
+ * recycled across turns, so without this you turn to a fresh day and land
+ * half way down it, at whatever offset the previous day was left at.
+ */
+function ScrollableLeaf({ page, pageNumber }: { page: LifePageType; pageNumber: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = 0;
+  }, [page.date]);
+
   return (
-    <div className="book-leaf-scroll h-full">
+    <div ref={ref} className="book-leaf-scroll h-full">
       <LifePage page={page} variant="book" />
       <p className="pb-5 text-center text-[0.65rem] tabular-nums text-paper-foreground/40">{pageNumber}</p>
     </div>
