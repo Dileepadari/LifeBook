@@ -1,3 +1,7 @@
+/**
+ * Health Booster: today's sleep, movement, screen time, water, mindfulness and
+ * daylight against their targets, with guided breathing and the trends behind.
+ */
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {

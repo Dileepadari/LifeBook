@@ -1,3 +1,7 @@
+/**
+ * The home screen: four stat tiles, the week's focus, today's open tasks, the
+ * habit grid and yesterday's page.
+ */
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -91,7 +95,9 @@ export default function Dashboard() {
         <StatTile index={3} label={tiles.resources.label} value={tiles.resources.value} max={tiles.resources.max} delta={tiles.resources.delta} icon={FolderOpen} accentClass="bg-success/15 text-success" />
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* items-start so the chart card keeps its own height instead of
+          stretching to match a long task list beside it. */}
+      <div className="grid items-start gap-4 lg:grid-cols-3">
         {/* Single series, so it follows the accent and needs no legend - the
             card title names it. */}
         <Card className="lg:col-span-2">
@@ -149,7 +155,7 @@ export default function Dashboard() {
               </p>
             ) : (
               <ul className="space-y-2">
-                {todaysTasks.map((task: Task, i: number) => (
+                {todaysTasks.slice(0, 6).map((task: Task, i: number) => (
                   <motion.li
                     key={task.id}
                     initial={{ opacity: 0, x: -8 }}
@@ -181,6 +187,16 @@ export default function Dashboard() {
                   </motion.li>
                 ))}
               </ul>
+            )}
+            {/* The card is a glance, not the list - /plan owns the full one. */}
+            {todaysTasks.length > 6 && (
+              <p className="pt-3 text-sm text-muted-foreground">
+                {todaysTasks.length - 6} more on{' '}
+                <Link to="/plan" className="text-primary underline-offset-2 hover:underline">
+                  Plan your day
+                </Link>
+                .
+              </p>
             )}
           </CardContent>
         </Card>

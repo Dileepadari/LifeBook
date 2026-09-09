@@ -1,3 +1,4 @@
+/** The book itself: the reader, the page count and the route to a printed copy. */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';

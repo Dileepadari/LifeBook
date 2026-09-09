@@ -1,3 +1,7 @@
+/**
+ * Gemini provider. Same capabilities as the Claude provider, over the REST API,
+ * with the shared JSON schemas translated to Gemini's OpenAPI dialect.
+ */
 import * as P from './prompts.js';
 
 export const DEFAULT_MODEL = 'gemini-2.5-flash';

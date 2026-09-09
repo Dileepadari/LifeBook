@@ -15,15 +15,20 @@ Technical reference for the LifeBook codebase: architecture, auth model, data mo
 - [Charts](#charts)
 - [The book reader](#the-book-reader)
 - [Frontend structure](#frontend-structure)
+- [Components and how they work](#components-and-how-they-work)
 - [Environment variables](#environment-variables)
 - [Local development](#local-development)
+- [Seed data](#seed-data)
+- [Documentation and screenshots](#documentation-and-screenshots)
+- [Continuous integration](#continuous-integration)
 - [Deployment](#deployment)
 - [Where the product came from](#where-the-product-came-from)
 - [Known constraints and gotchas](#known-constraints-and-gotchas)
+- [Contributors](#contributors)
 
 ## Tech stack
 
-**Frontend** - React 19, Vite 5, TypeScript, Tailwind v4 (no JS config; tokens live in `src/index.css`), shadcn/ui on Radix, TanStack Query, React Router 6, Recharts, framer-motion, dnd-kit, sonner. Path alias `@/` → `src/`.
+**Frontend** - React 19, Vite 7, TypeScript, Tailwind v4 (no JS config; tokens live in `src/index.css`), shadcn/ui on Radix, TanStack Query, React Router 6, Recharts, framer-motion, dnd-kit, sonner. Path alias `@/` → `src/`.
 
 **Backend** - Node 20+, Express 4, better-sqlite3 (synchronous, single file), bcryptjs, jsonwebtoken, multer. Plain ESM JavaScript, no build step.
 
@@ -217,6 +222,28 @@ All types live in `src/lib/api.ts` next to the client that returns them; there i
 
 Motion is `framer-motion` plus the CSS keyframes in `index.css`, and all of it is decorative - the DOM is complete before any animation runs. `useReducedMotion()` is honoured in components; the `prefers-reduced-motion` media query covers the CSS.
 
+## Components and how they work
+
+One page per route under `pages/`; anything with behaviour worth isolating lives under `components/`. The ones carrying real logic:
+
+| Component | What it does | Worth knowing |
+|---|---|---|
+| `layout/AppShell` | The signed-in frame: sidebar, mobile sheet, notification bell, day assistant, "today's page" shortcut | The only place route chrome is defined. A new page needs a nav entry here and a route in `App.tsx`, nothing else. |
+| `assistant/DayAssistant` | The corner orb: parses a written or dictated line about the day into proposed row edits | Talks to `/assistant/parse` then `/assistant/apply`; holds the undo token and the conflict prompts. Dictation is the browser's own recogniser, wrapped in `useDictation`. |
+| `lifebook/LifePage` | Renders one page: summary, metrics, achievements, improvements, journal excerpt | Shared by the reader, the single-day view and the print sheet, so all three cannot drift. Presentational - it takes a row and renders it. |
+| `lifebook/BookReader` | The spread, the sheet and the page turn | The only real 3D in the app; see [The book reader](#the-book-reader) for the two constraints that shape it. |
+| `lifebook/GeneratePageButton` | Generates or regenerates a day | Surfaces which engine wrote the page, and the 409 a sealed page returns. |
+| `study/StudyTimer` | Pomodoro, deep work and long blocks | Writes planned *and* actual minutes plus an honest focus rating - the number every focus insight is built from. |
+| `study/FlashcardReview` | The queue of cards due today | Grades post straight to `/cards/:id/review`, which is where SM-2 actually runs. |
+| `study/GenerateStudio` | Turns a resource or pasted text into cards, a quiz or a mind map | Provider-agnostic: it names the engine that answered and degrades to the built-in one. |
+| `study/MindMapView` | Radial tree with collapsible branches | Pure render over the stored JSON. |
+| `dashboard/StatTile` | One stat against its target, with the period delta | Renders "no earlier period to compare" rather than a fake 0% when there is no history. |
+| `dashboard/HabitGrid` | Thirty days per habit, one cell per day | A gap is the point; the grid never aggregates the streak away. |
+| `dashboard/CoachChat` | Answers questions from the user's own numbers | Sends `coachContext` from `analytics.js`, never raw rows. |
+| `layout/NotificationsBell` | Bell and dropdown | The only data-driven `<Link to>` in the app; its targets come from `server/badges.js`, which hardcodes them. |
+| `skeletons/pages` | Loading states shaped like the pages they stand in for | Prevents the layout jump a spinner leaves. |
+| `ui/*` | shadcn primitives on Radix | Generated, not hand-authored. Local deviations from stock are commented at the line that makes them, e.g. `min-w-0` on `Card`. |
+
 ## Environment variables
 
 ### Frontend (Vite)
@@ -259,6 +286,40 @@ To reset to a clean database, delete `server/data/` - the schema and all seed ca
 
 `npm run seed:demo` (`server/seedDemo.js`) builds a `demo` account with 24 days of activity and a generated LifePage per day, which is what makes the reader, the trends and the correlations worth looking at. The generator is a seeded PRNG, so a reseed produces the same book; the days carry a deliberate slump-then-push arc and derive focus ratings from the previous night's sleep and screen time, so the correlation the insight engine reports is actually present in the data rather than asserted over noise. Pass `-- --reset` to rebuild the account.
 
+## Seed data
+
+Two seeders, with different jobs:
+
+- **`server/seed.js`** runs on every boot and writes the shared catalogs - challenges, badges, motivation items, feed posts, support resources. Idempotent (`INSERT OR IGNORE` on stable ids), so it is safe on a live database. Adding a badge or a challenge is a row here, not code.
+- **`server/seedDemo.js`** builds the `demo` account (`demo` / `lifebook123`) and is never run automatically.
+
+What the demo seeder writes, and why each part exists:
+
+| Data | Shape |
+|---|---|
+| 24 days of study sessions | Planned versus actual minutes, technique, subject, focus rating derived from the previous night's sleep and screen time |
+| Tasks | 2-5 per day, sampled without replacement and skipping titles still open, so the backlog reads as distinct work; days older than four close out at 93% |
+| Habits, wellness, moods, journal | One row per day per habit; sleep, movement, screen time and mood carrying the same slump-then-push arc |
+| Study library | 5 resources, 2 decks of 8 cards spread across the SM-2 schedule with a third due today, a 6-question quiz with two attempts, one mind map |
+| Goals, saves, contacts | 4 goal visions, 3 saved motivation items, 2 saved posts, 3 SOS contacts - the screens that read as broken when empty |
+| 24 LifePages | Generated through the same engine the app uses, all sealed but today |
+
+The generator is a seeded PRNG, so a reseed produces the same book. `-- --reset` rebuilds the account from scratch, which also means a new user id and a new session - sign in again after reseeding.
+
+## Documentation and screenshots
+
+`README.md` is the dark-mode page and `README-light.md` its light twin. GitHub has no theme toggle, so the toggle is a pair of pages linking to each other; the light page is **generated**, never hand-edited:
+
+```sh
+npm run docs:readme-light    # rewrites README-light.md from README.md
+```
+
+Screenshots live under `docs/screenshots/{dark,light}` and `docs/screenshots/responsive/{dark,light}`, one file per screen with the same name in both themes, so the generator's path swap is all that separates the two pages. They are real viewport renders against the demo account (1440x1180 desktop, 390x844 phone, 820x1180 tablet), quantised to a 128-colour palette to keep the repository small.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request: `npm ci`, typecheck, lint, production build, a smoke test that boots the API against a temporary database and checks it answers, and `npm audit --audit-level=high`. `npm run verify` runs the first three locally and is what a pull request is expected to pass.
+
 ## Deployment
 
 ```sh
@@ -272,12 +333,8 @@ Back up `server/data/` and `uploads/`. That is the entire application state.
 
 ## Where the product came from
 
-The 2024 Design Thinking report and poster:
-
-```
-/media/cherry/Expansion/Delhi/PopOs/Documents/delhi_pc/Downloads/
-  DT_project_LifeBook_2022101007_2024204002_2024204010/
-```
+The 2024 Design Thinking report and poster are held by the authors and are not
+in this repository. The design work that came out of them is:
 
 - Figma design: `figma.com/design/OGjGTtKX8SyGjfpgMKkMQL/DesignThinking-LifeBook`
 - Figma prototype: `figma.com/proto/OGjGTtKX8SyGjfpgMKkMQL/DesignThinking-LifeBook?node-id=1-3`
@@ -300,4 +357,16 @@ The seeded challenge catalog, the three onboarding personas, the feed digests an
 - **No scheduler.** There is no cron. Nothing generates pages for you overnight; closing the day is a deliberate user action, which is also the design intent.
 - **The 20-element `lucide-react` namespace import in `Badges.tsx`** resolves icon names from seed data at runtime. It costs bundle size. If that matters, replace it with an explicit map of the icons actually used by the badge catalog.
 - **The bundle is ~2 MB** (500 kB gzipped) in one chunk. Recharts and framer-motion dominate. Route-level `React.lazy` would fix it; it has not been done because the app is self-hosted and loads from localhost.
+- **Fonts are bundled, not fetched.** `@fontsource-variable/inter` and `.../fraunces` are imported from `src/main.tsx`, not from `index.css`: Tailwind v4 inlines a CSS `@import` without rewriting the relative font URLs inside it, so importing them there builds a stylesheet pointing at `./files/*.woff2` that were never emitted. Imported from the JS entry, Vite emits and hashes them. An app whose pitch is that nothing leaves your machine should not be calling Google on every page load.
+- **Recharts dots default to a white fill.** `dot={{ r: 3, strokeWidth: 0 }}` with no `fill` paints white circles along the line, which on a light card erases the line under each point and reads as a dashed series. Always give a dot an explicit fill.
+- **A Recharts `YAxis` clipped by a negative left margin loses its tick labels.** `margin.left` more negative than the axis is wide silently renders the labels as stubs. Keep `|left| < width`.
+- **The task board's Done column shows today's closures only.** Everything finished earlier lives on the page for the day it was closed. Without that filter the column grows without bound and stops being a working surface.
+- **Mood faces are `lucide-react` icons, not emoji.** Emoji render differently per platform and carry their own colour; the icon set inherits the theme. There are no emoji characters anywhere in the source.
 - **`ThemeContext` exports non-components** (`colorPalettes`, `hexToHSL`, `useTheme`), so it trips `react-refresh/only-export-components`. Three warnings, inherited from the `moneyos` original, left as-is for consistency with the other house apps.
+
+## Contributors
+
+- **Dileep Adari** ([@Dileepadari](https://github.com/Dileepadari)) - author and maintainer of the application.
+- **Ashwani Raj**, **G Yuvaraj** and **Adari Dileep** - the 2024 Design Thinking study the product is built from: the interviews, the survey and the literature review.
+
+Issues and pull requests: [github.com/Dileepadari/LifeBook](https://github.com/Dileepadari/LifeBook). Keep commit messages to a single line and run `npm run verify` before opening a pull request.

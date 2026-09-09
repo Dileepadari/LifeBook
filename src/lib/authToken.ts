@@ -1,3 +1,4 @@
+/** The single reader and writer of the stored session token. */
 const TOKEN_KEY = 'lifebook_token';
 
 export interface TokenPayload {

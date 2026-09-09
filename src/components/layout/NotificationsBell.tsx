@@ -1,3 +1,4 @@
+/** Notification bell and its dropdown, polled with the rest of the app data. */
 import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -1,3 +1,7 @@
+/**
+ * The signed-in frame: sidebar on desktop, sheet on mobile, plus the notification
+ * bell, the day assistant and the "today's page" shortcut.
+ */
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';

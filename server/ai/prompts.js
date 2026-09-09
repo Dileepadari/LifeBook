@@ -1,3 +1,7 @@
+/**
+ * Prompt text and the JSON schemas shared by both AI providers, so a page from
+ * Claude and a page from Gemini have the same shape.
+ */
 // Shared prompt text and JSON schemas, used identically by the Anthropic and
 // Gemini clients so switching provider changes the voice, never the shape.
 

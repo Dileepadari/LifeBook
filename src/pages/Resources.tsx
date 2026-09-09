@@ -1,3 +1,7 @@
+/**
+ * The study library: upload, tag and search materials. Text and markdown are
+ * indexed, which is what makes them usable as a source for generation.
+ */
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

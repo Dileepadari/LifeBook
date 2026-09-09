@@ -1,3 +1,7 @@
+/**
+ * LifePage generation, the book itself, sealing and unsealing, and print
+ * orders.
+ */
 import { Router } from 'express';
 import { db, uid, today, parseJSON, daysAgo } from '../db.js';
 import { requireAuth } from '../auth.js';

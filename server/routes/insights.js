@@ -1,3 +1,6 @@
+/**
+ * Read-only analytics for the charts, badge progress and the coach chat.
+ */
 import { Router } from 'express';
 import { db, uid, today, daysAgo, parseJSON, dateRange } from '../db.js';
 import { requireAuth } from '../auth.js';

@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+/** Toast host, wired to the app theme. shadcn/ui primitive; edits from stock are commented where they occur. */
 import { useTheme } from "@/contexts/ThemeContext";
 import { Toaster as Sonner, toast } from "sonner";
 

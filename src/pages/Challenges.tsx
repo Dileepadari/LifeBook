@@ -1,3 +1,4 @@
+/** Challenge hub: the active challenge, the catalog and the leaderboard. */
 import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Check, Flame, Trophy, Users, Target, Loader2, X } from 'lucide-react';

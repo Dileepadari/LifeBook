@@ -1,3 +1,4 @@
+/** Runs a generated practice test and scores it against the stored answers. */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';

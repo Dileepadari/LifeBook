@@ -1,3 +1,7 @@
+/**
+ * Signup, login, session lookup and profile updates. Signup also plants the
+ * starter habits, so a new account has something to check in on day one.
+ */
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, uid } from '../db.js';

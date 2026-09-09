@@ -1,3 +1,7 @@
+/**
+ * Thirty-day habit grid, one row per habit. A gap in a row is a broken chain,
+ * which is the whole point of showing it as a grid rather than a count.
+ */
 import { motion, useReducedMotion } from 'framer-motion';
 import { Flame, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

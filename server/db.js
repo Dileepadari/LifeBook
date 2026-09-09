@@ -1,3 +1,8 @@
+/**
+ * SQLite handle and the small helpers every module shares - id generation,
+ * local-timezone dates and JSON column parsing. The schema is applied on every
+ * boot, so a fresh checkout needs no migration step.
+ */
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';

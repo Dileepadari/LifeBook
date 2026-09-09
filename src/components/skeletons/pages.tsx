@@ -1,3 +1,7 @@
+/**
+ * Loading skeletons shaped like the pages they stand in for, so a slow load
+ * settles into place instead of jumping.
+ */
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 

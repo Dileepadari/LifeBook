@@ -1,3 +1,8 @@
+/**
+ * The built-in engine: writes LifePages, flashcards, quizzes and mind maps from
+ * the numbers alone. No key, no network, and the reason every AI feature in the
+ * app still works with nothing configured.
+ */
 // The built-in engine. No network, no key, no cost - it reads the same day
 // snapshot the LLM providers get and derives real conclusions from it:
 // streaks, target-vs-actual gaps, week-over-week deltas, and the sleep /

@@ -1,3 +1,4 @@
+/** Popover. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 

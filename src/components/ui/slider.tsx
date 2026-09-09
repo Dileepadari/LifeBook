@@ -1,3 +1,4 @@
+/** Slider, used for the wellness targets. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 

@@ -1,3 +1,4 @@
+/** Renders a generated mind map as a radial tree with collapsible branches. */
 import { motion, useReducedMotion } from 'framer-motion';
 import { useChartTheme } from '@/lib/chartTheme';
 

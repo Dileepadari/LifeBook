@@ -1,3 +1,7 @@
+/**
+ * Dashboard coach panel. Questions are answered from the user's own numbers,
+ * through whichever AI provider is configured, falling back to the built-in one.
+ */
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Send, Loader2, Sparkles } from 'lucide-react';

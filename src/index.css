@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -133,13 +131,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   /* Display face, used only on book surfaces and marketing headings. */
   .font-display {
-    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    font-family: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
     font-optical-sizing: auto;
   }
 

@@ -1,3 +1,7 @@
+/**
+ * The review surface for cards due today. Grades feed straight back into the
+ * SM-2 scheduler on the server.
+ */
 import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { RotateCw, CheckCheck } from 'lucide-react';

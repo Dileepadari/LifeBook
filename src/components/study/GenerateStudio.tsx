@@ -1,3 +1,7 @@
+/**
+ * Turns a resource or pasted text into flashcards, a practice test or a mind
+ * map, through whichever AI provider is configured.
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';

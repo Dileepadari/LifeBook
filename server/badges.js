@@ -1,3 +1,7 @@
+/**
+ * Badge evaluation. Rules live in the `badges` table; this file knows how to
+ * measure each one and awards whatever has crossed its threshold.
+ */
 import { db, uid } from './db.js';
 import { habitStreak } from './analytics.js';
 

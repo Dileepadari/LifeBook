@@ -1,3 +1,4 @@
+/** Form label. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva, type VariantProps } from "class-variance-authority";

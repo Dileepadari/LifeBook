@@ -1,3 +1,4 @@
+/** Orders a printed copy of a date range: format, cover title and address. */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';

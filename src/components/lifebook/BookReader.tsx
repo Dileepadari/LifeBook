@@ -1,3 +1,7 @@
+/**
+ * The book reader: a spine-hinged sheet with two printed faces, turned by drag
+ * or by the arrow keys. Only the two visible leaves are mounted at a time.
+ */
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   animate, motion, useMotionValue, useTransform, useReducedMotion,

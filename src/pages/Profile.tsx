@@ -1,3 +1,4 @@
+/** Profile and targets - the numbers health points are measured against. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 

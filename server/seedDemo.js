@@ -39,6 +39,11 @@ const TASKS = [
   ['Practice mock paper', 'academic', 'important'],
   ['Club meeting', 'ECA', 'normal'],
   ['Laundry', 'personal', 'low'],
+  ['Rewrite the lab report conclusion', 'academic', 'important'],
+  ['Evening run, easy pace', 'wellness', 'normal'],
+  ['Reply to the internship email', 'personal', 'urgent'],
+  ['Solve two past-paper questions', 'academic', 'normal'],
+  ['Volunteer session at the coding club', 'ECA', 'normal'],
 ];
 
 const GRATITUDE = [
@@ -147,6 +152,7 @@ async function main() {
   // with streaks and slumps rather than uniform noise.
   let momentum = 0.45;
 
+  const openTitles = new Set();
   for (let d = DAYS - 1; d >= 0; d--) {
     const date = daysAgo(d);
     const weekday = new Date(`${date}T12:00:00`).getDay();
@@ -205,9 +211,16 @@ async function main() {
 
     // Tasks: planned in the morning, some of them closed by evening.
     const planned = weekend ? 2 : 3 + Math.round(r() * 2);
-    for (let i = 0; i < planned; i++) {
-      const [title, category, priority] = pick(r, TASKS);
-      const done = r() < quality;
+    // Sampled without replacement so a single day never lists the same task twice.
+    // Titles still open from an earlier day are skipped too, so the backlog
+    // reads as distinct work rather than one line repeated down the list.
+    const available = TASKS.filter(([t]) => !openTitles.has(t)).sort(() => r() - 0.5);
+    const dayTasks = available.slice(0, planned);
+    for (let i = 0; i < dayTasks.length; i++) {
+      const [title, category, priority] = dayTasks[i];
+      // Older days close out almost everything: a real backlog is the last few
+      // days of loose ends, not a month of them.
+      const done = d > 4 ? r() < 0.93 : r() < quality;
       db.prepare(
         `INSERT INTO tasks (id,user_id,title,status,priority,category,due_date,sort_order,completed_at,created_at)
          VALUES (?,?,?,?,?,?,?,?,?,?)`,
@@ -218,6 +231,7 @@ async function main() {
         done ? `${date}T20:00:00` : null,
         `${date}T08:00:00`,
       );
+      if (done) openTitles.delete(title); else openTitles.add(title);
     }
 
     for (const h of habits) {
@@ -257,17 +271,203 @@ async function main() {
     momentum = momentum * 0.55 + quality * 0.45;
   }
 
-  // ---- a resource, so the study screen is not empty --------------------
+  // ---- the study library ------------------------------------------------
+  // Enough material for every study surface to have something real in it: a
+  // shelf of resources, two decks whose cards sit at different points in the
+  // SM-2 schedule, a quiz with a couple of attempts behind it, and one mind map.
+  const RESOURCES = [
+    ['Spaced repetition - lecture notes', 'Notes', 'Algorithms', 1,
+      'Spaced repetition schedules reviews at increasing intervals. The SM-2 algorithm ' +
+      'adjusts an ease factor per card based on how well it was recalled, so cards you ' +
+      'find hard come back sooner and cards you know drift further apart. Reviewing at ' +
+      'the edge of forgetting is what produces durable recall; rereading does not.'],
+    ['Dynamic programming - worked examples', 'Notes', 'Algorithms', 0,
+      'A problem is a candidate for dynamic programming when it has optimal substructure ' +
+      'and overlapping subproblems. Memoisation solves it top down and caches results; ' +
+      'tabulation fills the table bottom up. Knapsack, edit distance and longest common ' +
+      'subsequence are the three shapes most exam questions reduce to.'],
+    ['Thermodynamics - first and second law', 'Slides', 'Thermodynamics', 1,
+      'The first law is conservation of energy for a closed system: the change in internal ' +
+      'energy equals heat added minus work done. The second law says entropy of an isolated ' +
+      'system never decreases, which is what makes a process irreversible and puts a ceiling ' +
+      'on the efficiency of any heat engine.'],
+    ['Linear algebra - eigenvalues cheat sheet', 'Reference', 'Linear Algebra', 0,
+      'An eigenvector of a matrix is a direction the matrix only stretches, and its eigenvalue ' +
+      'is the stretch factor. Solve det(A - lambda I) = 0 for the eigenvalues, then the null ' +
+      'space of (A - lambda I) for each eigenvector. A symmetric matrix always has real ' +
+      'eigenvalues and an orthogonal eigenbasis.'],
+    ['Operating systems - scheduling past paper', 'Past paper', 'Operating Systems', 0,
+      'Round robin bounds response time but not turnaround. Shortest job first is optimal for ' +
+      'average waiting time and impossible to run exactly, because it needs the burst length ' +
+      'in advance. Multilevel feedback queues approximate it by demoting whatever keeps using ' +
+      'its whole slice.'],
+  ];
+  const resourceIds = RESOURCES.map(([name, category, subject, starred, text], i) => {
+    const id = uid();
+    const added = `${daysAgo(DAYS - 2 - i * 3)}T18:00:00`;
+    db.prepare(
+      `INSERT INTO resources (id,user_id,name,category,subject,text_content,starred,size_bytes,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    ).run(id, userId, name, category, subject, text, starred, Buffer.byteLength(text), added, added);
+    return id;
+  });
+
+  const DECKS = [
+    ['Algorithms - recurrences and DP', 'Algorithms', 1, [
+      ['What does the master theorem solve?', 'Recurrences of the form T(n) = aT(n/b) + f(n), by comparing f(n) against n^(log_b a).'],
+      ['When is a problem suited to dynamic programming?', 'When it has optimal substructure and overlapping subproblems.'],
+      ['Memoisation vs tabulation', 'Memoisation is top down and recursive with a cache; tabulation is bottom up and iterative over the table.'],
+      ['Time complexity of 0/1 knapsack, DP table', 'O(nW): one row per item, one column per capacity unit.'],
+      ['Why is greedy wrong for 0/1 knapsack?', 'Taking the best ratio first can block a combination that fills the capacity better; there is no exchange argument.'],
+      ['Edit distance base cases', 'Transforming an empty string costs the length of the other string, so row 0 and column 0 count up from zero.'],
+      ['What makes binary search O(log n)?', 'Each comparison discards half the remaining interval, so the size falls geometrically.'],
+      ['Amortised cost of dynamic array push', 'O(1): the doubling copies total less than 2n work across n pushes.'],
+    ]],
+    ['Thermodynamics - laws and cycles', 'Thermodynamics', 3, [
+      ['State the first law of thermodynamics', 'dU = Q - W: the internal energy change equals heat added to the system minus work done by it.'],
+      ['State the second law in one line', 'The entropy of an isolated system never decreases.'],
+      ['What is an isentropic process?', 'Adiabatic and reversible: no heat crosses the boundary and entropy stays constant.'],
+      ['Carnot efficiency', '1 - Tc/Th, with both temperatures absolute. No heat engine between the same reservoirs beats it.'],
+      ['Difference between heat and work', 'Both are energy in transit; heat crosses a boundary because of a temperature difference, work because of a force through a distance.'],
+      ['Why is a real engine below Carnot efficiency?', 'Friction, finite temperature differences and unrestrained expansion all generate entropy, and every bit of it costs work.'],
+      ['What does enthalpy measure?', 'H = U + pV, the energy accounted for at constant pressure, which is why it is the natural variable for flow processes.'],
+      ['Meaning of a positive Gibbs free energy change', 'The process does not run spontaneously at that temperature and pressure.'],
+    ]],
+  ];
+  for (const [deckName, subject, resourceIndex, cards] of DECKS) {
+    const deckId = uid();
+    db.prepare(
+      'INSERT INTO decks (id,user_id,name,subject,resource_id,source,created_at) VALUES (?,?,?,?,?,?,?)',
+    ).run(deckId, userId, deckName, subject, resourceIds[resourceIndex], 'ai', `${daysAgo(DAYS - 2)}T19:00:00`);
+
+    cards.forEach(([front, back], i) => {
+      // A third of every deck falls due today; the rest are spread across the
+      // schedule the way a deck in use actually looks.
+      const seen = i % 3 !== 0;
+      const reps = seen ? 1 + Math.floor(r() * 4) : 0;
+      const interval = seen ? [1, 3, 6, 12, 21][Math.min(reps, 4)] : 0;
+      const dueIn = i % 3 === 0 ? 0 : Math.max(1, Math.round(interval * (0.4 + r() * 0.8)));
+      db.prepare(
+        `INSERT INTO flashcards
+           (id,user_id,deck_id,front,back,ease,interval_days,repetitions,due_date,last_reviewed,created_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      ).run(
+        uid(), userId, deckId, front, back,
+        Number((2.2 + r() * 0.5).toFixed(2)), interval, reps,
+        dueIn === 0 ? daysAgo(0) : daysAgo(-dueIn),
+        seen ? daysAgo(Math.min(DAYS - 1, interval)) : null,
+        `${daysAgo(DAYS - 2)}T19:00:00`,
+      );
+    });
+  }
+
+  const quizId = uid();
   db.prepare(
-    `INSERT INTO resources (id,user_id,name,category,subject,text_content,starred)
-     VALUES (?,?,?,?,?,?,1)`,
+    `INSERT INTO quizzes (id,user_id,title,subject,resource_id,time_limit_minutes,generated_by,created_at)
+     VALUES (?,?,?,?,?,?,?,?)`,
   ).run(
-    uid(), userId, 'Spaced repetition - lecture notes', 'Notes', 'Algorithms',
-    'Spaced repetition schedules reviews at increasing intervals. The SM-2 algorithm ' +
-    'adjusts an ease factor per card based on how well it was recalled, so cards you ' +
-    'find hard come back sooner and cards you know drift further apart. Reviewing at ' +
-    'the edge of forgetting is what produces durable recall; rereading does not.',
+    quizId, userId, 'Dynamic programming - quick check', 'Algorithms',
+    resourceIds[1], 10, 'builtin', `${daysAgo(6)}T18:00:00`,
   );
+  const QUESTIONS = [
+    ['Which pair of properties makes a problem suitable for dynamic programming?',
+      ['Optimal substructure and overlapping subproblems', 'Greedy choice and a sorted input',
+       'Divide and conquer and a balanced tree', 'Linearity and a fixed alphabet'], 0,
+      'Without overlapping subproblems there is nothing to cache, and without optimal substructure the cached answers cannot be combined.'],
+    ['What is the time complexity of the standard 0/1 knapsack table?',
+      ['O(n log W)', 'O(nW)', 'O(n^2)', 'O(2^n)'], 1,
+      'One row per item and one column per unit of capacity, filled in constant time each.'],
+    ['Memoisation differs from tabulation in that it is',
+      ['bottom up and iterative', 'top down and recursive', 'always faster', 'only valid for trees'], 1,
+      'Memoisation keeps the recursion and caches its results; tabulation replaces the recursion with a loop over the table.'],
+    ['The base case row of an edit distance table holds',
+      ['zeros', 'the counting numbers 0, 1, 2, ...', 'the input string', 'the alphabet size'], 1,
+      'Turning a prefix into an empty string costs one deletion per character.'],
+    ['Longest common subsequence between strings of length m and n costs',
+      ['O(m + n)', 'O(mn)', 'O(mn log n)', 'O(m^2 n^2)'], 1,
+      'Every cell of the m by n table is filled once from three neighbours.'],
+    ['Greedy fails on 0/1 knapsack because',
+      ['the weights are not integers', 'sorting is too slow',
+       'the best ratio item can block a better combination', 'the capacity is unbounded'], 2,
+      'The exchange argument that justifies a greedy choice does not hold once an item cannot be split.'],
+  ];
+  QUESTIONS.forEach(([prompt, options, answerIndex, explanation], i) => {
+    db.prepare(
+      'INSERT INTO quiz_questions (id,quiz_id,prompt,options,answer_index,explanation,sort_order) VALUES (?,?,?,?,?,?,?)',
+    ).run(uid(), quizId, prompt, JSON.stringify(options), answerIndex, explanation, i);
+  });
+  for (const [ago, score] of [[6, 4], [2, 5]]) {
+    db.prepare(
+      'INSERT INTO quiz_attempts (id,user_id,quiz_id,date,score,total,seconds_taken,responses,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
+    ).run(
+      uid(), userId, quizId, daysAgo(ago), score, QUESTIONS.length,
+      240 + Math.round(r() * 180),
+      JSON.stringify(QUESTIONS.map((q, i) => (i < score ? q[2] : (q[2] + 1) % 4))),
+      `${daysAgo(ago)}T18:30:00`,
+    );
+  }
+
+  db.prepare(
+    'INSERT INTO mind_maps (id,user_id,title,resource_id,data,generated_by,created_at) VALUES (?,?,?,?,?,?,?)',
+  ).run(
+    uid(), userId, 'Thermodynamics - the two laws', resourceIds[2],
+    JSON.stringify({
+      root: 'Thermodynamics',
+      children: [
+        { label: 'First law', children: [
+          { label: 'dU = Q - W', children: [] },
+          { label: 'Energy is conserved', children: [] },
+          { label: 'Enthalpy H = U + pV', children: [] },
+        ] },
+        { label: 'Second law', children: [
+          { label: 'Entropy never decreases', children: [] },
+          { label: 'Irreversibility', children: [] },
+          { label: 'Carnot ceiling 1 - Tc/Th', children: [] },
+        ] },
+        { label: 'Processes', children: [
+          { label: 'Isothermal', children: [] },
+          { label: 'Adiabatic', children: [] },
+          { label: 'Isentropic', children: [] },
+        ] },
+      ],
+    }),
+    'builtin', `${daysAgo(5)}T20:00:00`,
+  );
+
+  // ---- the smaller surfaces --------------------------------------------
+  // Goals, saved motivation, saved posts and emergency contacts: each is one
+  // screen in the app that reads as broken when it is empty.
+  for (const [text, targetDays, achieved] of [
+    ['Finish the semester without a single all-nighter', 45, 0],
+    ['Hold a four-hour deep work day, twice a week', 30, 0],
+    ['Read one paper a week outside the syllabus', 60, 0],
+    ['Get the sleep average above seven hours', -3, 1],
+  ]) {
+    db.prepare(
+      'INSERT INTO goal_visions (id,user_id,text,target_date,achieved,created_at) VALUES (?,?,?,?,?,?)',
+    ).run(uid(), userId, text, daysAgo(-targetDays), achieved, `${daysAgo(DAYS - 3)}T21:00:00`);
+  }
+
+  const motivationIds = db.prepare('SELECT id FROM motivation_items ORDER BY id LIMIT 3').all();
+  for (const row of motivationIds) {
+    db.prepare('INSERT OR IGNORE INTO saved_motivation (id,user_id,item_id) VALUES (?,?,?)')
+      .run(uid(), userId, row.id);
+  }
+
+  const postIds = db.prepare('SELECT id FROM feed_posts ORDER BY id LIMIT 2').all();
+  for (const row of postIds) {
+    db.prepare('INSERT OR IGNORE INTO saved_posts (id,user_id,post_id) VALUES (?,?,?)')
+      .run(uid(), userId, row.id);
+  }
+
+  for (const [name, phone, relation, order] of [
+    ['Amma', '+91 90000 00001', 'Family', 0],
+    ['Ravi (roommate)', '+91 90000 00002', 'Friend', 1],
+    ['Campus counsellor', '+91 90000 00003', 'Counsellor', 2],
+  ]) {
+    db.prepare('INSERT INTO sos_contacts (id,user_id,name,phone,relation,sort_order) VALUES (?,?,?,?,?,?)')
+      .run(uid(), userId, name, phone, relation, order);
+  }
 
   // ---- the book --------------------------------------------------------
   // Generated through the same path the app uses, so the demo pages are real

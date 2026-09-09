@@ -1,3 +1,4 @@
+/** Badges earned and still to earn, each with progress measured from real rows. */
 import { motion, useReducedMotion } from 'framer-motion';
 import * as Icons from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

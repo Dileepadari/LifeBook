@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+/** Small status and category pill. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 

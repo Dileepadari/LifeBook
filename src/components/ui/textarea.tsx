@@ -1,3 +1,4 @@
+/** Multi-line text input. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";

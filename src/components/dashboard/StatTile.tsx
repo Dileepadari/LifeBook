@@ -1,3 +1,4 @@
+/** One dashboard stat tile: value against its target, with the period delta. */
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from 'lucide-react';

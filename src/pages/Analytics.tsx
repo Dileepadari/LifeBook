@@ -1,3 +1,8 @@
+/**
+ * The answer to "students cannot see their own progress": focus over time, by
+ * weekday and by subject, sleep against focus rating, and the same numbers as a
+ * table for anyone who would rather read them.
+ */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -174,8 +179,10 @@ export default function Analytics() {
                       wrapperStyle={{ fontSize: 11, color: t.textSecondary, paddingTop: 8 }}
                       formatter={(v) => (v === 'sleep' ? 'Sleep (hours)' : 'Focus rating (1-5)')}
                     />
-                    <Line type="monotone" dataKey="sleep" stroke={t.series[0]} strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} connectNulls />
-                    <Line type="monotone" dataKey="focus" stroke={t.series[1]} strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} connectNulls />
+                    {/* Dots need an explicit fill: the recharts default is white,
+                        which on a light card paints the line out from under itself. */}
+                    <Line type="monotone" dataKey="sleep" stroke={t.series[0]} strokeWidth={2} dot={{ r: 3, strokeWidth: 0, fill: t.series[0] }} connectNulls />
+                    <Line type="monotone" dataKey="focus" stroke={t.series[1]} strokeWidth={2} dot={{ r: 3, strokeWidth: 0, fill: t.series[1] }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>

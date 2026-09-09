@@ -1,3 +1,4 @@
+/** Modal confirmation dialog. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 

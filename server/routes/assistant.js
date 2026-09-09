@@ -1,3 +1,7 @@
+/**
+ * The day assistant: turns one written line about a day into row edits across
+ * tasks, study, wellness and journal, and asks before overwriting anything.
+ */
 import { Router } from 'express';
 import { db, uid, today, parseJSON } from '../db.js';
 import { requireAuth } from '../auth.js';

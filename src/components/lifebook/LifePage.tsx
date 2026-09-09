@@ -1,3 +1,8 @@
+/**
+ * One printed page: the narrated summary, the day's metrics, achievements,
+ * improvements and the journal excerpt. Shared by the reader, the day view and
+ * the print sheet, so all three stay identical.
+ */
 import { motion, useReducedMotion } from 'framer-motion';
 import { Sparkles, TrendingUp, AlertCircle, Quote, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

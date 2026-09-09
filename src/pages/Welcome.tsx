@@ -1,3 +1,4 @@
+/** Signed-out landing page: what the app is, and the two ways in. */
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, LineChart, Sparkles, HeartPulse } from 'lucide-react';

@@ -1,3 +1,4 @@
+/** Research digests behind LifeBook, plus anything written on this instance. */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bookmark, Plus, Loader2, Megaphone, BookOpen, Star, Share2 } from 'lucide-react';

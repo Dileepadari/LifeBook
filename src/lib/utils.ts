@@ -1,3 +1,4 @@
+/** Small shared helpers: the Tailwind class merger and dialog guards. */
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

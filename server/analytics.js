@@ -1,3 +1,8 @@
+/**
+ * Every derived number in the app: the day snapshot both page generators read,
+ * range analytics for the charts, health points, habit streaks and the coach
+ * context. Nothing here writes.
+ */
 import { db, parseJSON, daysAgo, dateRange, today } from './db.js';
 
 // The single source of truth for "what actually happened". Both the

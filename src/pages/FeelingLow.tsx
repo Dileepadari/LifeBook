@@ -1,7 +1,12 @@
+/**
+ * Mood logging and the three interventions with evidence behind them, with
+ * helplines one tap away. Deliberately the least gamified screen in the app.
+ */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Phone, ExternalLink, Plus, Trash2, Wind, Loader2, LifeBuoy, MessageCircleHeart, Footprints,
+  Frown, Annoyed, Meh, Smile, Laugh,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -18,7 +23,9 @@ import { useChartTheme, chartChrome } from '@/lib/chartTheme';
 import { MOOD_LABELS, shortDate, clock } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-const MOOD_FACES = ['😞', '🙁', '😐', '🙂', '😄'];
+// Icons rather than emoji: the set renders identically on every platform, and
+// it inherits the theme colour instead of carrying its own.
+const MOOD_FACES = [Frown, Annoyed, Meh, Smile, Laugh];
 
 const TRIGGERS = [
   'tired', 'behind', 'exam pressure', 'lonely', 'family', 'money',
@@ -93,7 +100,7 @@ export default function FeelingLow() {
           </CardHeader>
           <CardContent className="space-y-6 pt-2">
             <div className="flex justify-between gap-2">
-              {MOOD_FACES.map((face, i) => (
+              {MOOD_FACES.map((Face, i) => (
                 <motion.button
                   key={i}
                   type="button"
@@ -106,7 +113,7 @@ export default function FeelingLow() {
                   )}
                   aria-pressed={score === i + 1}
                 >
-                  <span className="text-2xl" aria-hidden>{face}</span>
+                  <Face className="h-6 w-6" aria-hidden />
                   <span className="text-[0.65rem] text-muted-foreground">{MOOD_LABELS[i]}</span>
                 </motion.button>
               ))}
@@ -191,10 +198,12 @@ export default function FeelingLow() {
           </CardHeader>
           <CardContent className="pt-4">
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              {/* The left margin only trims the gap the axis leaves; pulling it
+                  further than the axis is wide clips the tick labels away. */}
+              <LineChart data={chartData} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
                 <CartesianGrid {...chrome.grid} />
                 <XAxis dataKey="label" {...chrome.axis} />
-                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} {...chrome.axis} width={30} />
+                <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} {...chrome.axis} width={34} />
                 <RTooltip
                   {...chrome.tooltip}
                   formatter={(v: number) => [MOOD_LABELS[v - 1] || v, 'Mood']}

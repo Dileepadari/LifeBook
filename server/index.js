@@ -1,3 +1,7 @@
+/**
+ * Express entry point: mounts the seven route modules under /api, serves the
+ * built SPA in production, and seeds the shared catalog rows on boot.
+ */
 import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';

@@ -1,3 +1,7 @@
+/**
+ * Generic CRUD gateway: one endpoint taking { table, operation }, whitelisted
+ * per table, so plain list/create/update/remove needs no bespoke route.
+ */
 import { Router } from 'express';
 import { db, uid } from '../db.js';
 import { requireAuth } from '../auth.js';

@@ -1,3 +1,4 @@
+/** The task board: to do, ongoing, blocked and today's closures, drag to move. */
 import { useMemo, useState } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, KeyboardSensor, closestCorners,
@@ -56,7 +57,14 @@ export default function PlanDay() {
 
   const byColumn = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = { todo: [], ongoing: [], blocked: [], done: [] };
-    for (const task of tasks) map[task.status]?.push(task);
+    const today = todayStr();
+    for (const task of tasks) {
+      // The board is a working surface, not an archive: only today's closures
+      // stay in Done, or the column grows without bound. The rest live on the
+      // day pages they belong to.
+      if (task.status === 'done' && task.completed_at && !task.completed_at.startsWith(today)) continue;
+      map[task.status]?.push(task);
+    }
     for (const key of Object.keys(map) as TaskStatus[]) {
       map[key].sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at));
     }

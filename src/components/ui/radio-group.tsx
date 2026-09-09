@@ -1,3 +1,4 @@
+/** Radio group. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Circle } from "lucide-react";

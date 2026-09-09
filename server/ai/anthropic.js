@@ -1,3 +1,7 @@
+/**
+ * Claude provider. Structured output through one shared call helper, so JSON
+ * parsing and refusal handling live in a single place.
+ */
 import Anthropic from '@anthropic-ai/sdk';
 import * as P from './prompts.js';
 

@@ -1,3 +1,7 @@
+/**
+ * Goals with dates against them, plus affirmations, stories and quotes - written
+ * for the days the motivation has already gone.
+ */
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Plus, Trash2, Sparkles, Quote, Target, Check } from 'lucide-react';

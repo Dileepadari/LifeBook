@@ -1,3 +1,4 @@
+/** Scroll area with a styled scrollbar. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 

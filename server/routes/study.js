@@ -1,3 +1,7 @@
+/**
+ * Study sessions, resource uploads, decks and the SM-2 scheduler, quizzes and
+ * mind maps.
+ */
 import { Router } from 'express';
 import multer from 'multer';
 import fs from 'node:fs';

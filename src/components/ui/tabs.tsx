@@ -1,3 +1,4 @@
+/** Tabs. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 

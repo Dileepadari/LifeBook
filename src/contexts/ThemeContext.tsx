@@ -1,3 +1,7 @@
+/**
+ * Theme state: light or dark plus the accent palettes, stored per device in
+ * localStorage. Charts keep their own fixed colours regardless.
+ */
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 // Personal, localStorage-only theming (no shared-workspace concept in

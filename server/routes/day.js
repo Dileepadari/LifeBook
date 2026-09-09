@@ -1,3 +1,7 @@
+/**
+ * The daily surfaces - wellness logs, moods, journal entries, habit check-ins
+ * and challenge progress - plus the dashboard payload.
+ */
 import { Router } from 'express';
 import { db, uid, today, daysAgo, dateRange, parseJSON } from '../db.js';
 import { requireAuth } from '../auth.js';

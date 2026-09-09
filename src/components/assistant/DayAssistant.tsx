@@ -1,3 +1,7 @@
+/**
+ * The floating day assistant: one text box that turns a written line about the
+ * day into proposed row edits, shown for confirmation before anything is saved.
+ */
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {

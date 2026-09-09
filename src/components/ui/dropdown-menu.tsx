@@ -1,3 +1,4 @@
+/** Dropdown menu. shadcn/ui primitive; edits from stock are commented where they occur. */
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";

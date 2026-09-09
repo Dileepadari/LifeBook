@@ -1,3 +1,4 @@
+/** Print stylesheet view: every page in range, one per sheet, no app chrome. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Printer } from 'lucide-react';

@@ -1,3 +1,7 @@
+/**
+ * Password hashing, JWT signing and the requireAuth middleware. The signing
+ * secret persists next to the database so a restart does not log everyone out.
+ */
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import fs from 'node:fs';

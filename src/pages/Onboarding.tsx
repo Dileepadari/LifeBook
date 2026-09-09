@@ -1,3 +1,4 @@
+/** First-run setup: name, targets and the starter habits. */
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

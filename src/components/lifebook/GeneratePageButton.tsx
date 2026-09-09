@@ -1,3 +1,4 @@
+/** Generates or regenerates the LifePage for one day, and names the engine used. */
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, Loader2, Check } from 'lucide-react';

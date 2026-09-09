@@ -1,3 +1,7 @@
+/**
+ * Reflection, gratitude, wins and improvements for today, and the entries
+ * behind it. Whatever is written here is quoted on tonight's LifePage.
+ */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

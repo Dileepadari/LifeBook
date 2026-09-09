@@ -1,3 +1,6 @@
+/**
+ * Date, duration and label formatting shared by every page.
+ */
 // Formatting helpers. Kept hand-rolled with Intl rather than pulling in a date
 // library - the app needs about eight of these and none of them need parsing.
 

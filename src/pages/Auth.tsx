@@ -1,3 +1,4 @@
+/** Login and signup, one form with a mode switch. */
 import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';

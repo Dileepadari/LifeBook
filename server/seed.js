@@ -1,3 +1,7 @@
+/**
+ * Shared catalog rows - challenges, badges, motivation items, feed posts and
+ * support resources. Idempotent, so it runs on every boot.
+ */
 import { db } from './db.js';
 
 // Shared, non-user-owned reference content. Everything here is drawn from the

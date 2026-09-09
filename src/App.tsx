@@ -1,3 +1,7 @@
+/**
+ * Route table. Everything but the welcome screen, /auth and the print view
+ * renders inside AppShell behind a RequireAuth guard.
+ */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeContext';

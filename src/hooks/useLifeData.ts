@@ -1,3 +1,7 @@
+/**
+ * TanStack Query hooks over the API. Every mutation invalidates the queries it
+ * can affect, so a habit check-in updates the dashboard without a reload.
+ */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {

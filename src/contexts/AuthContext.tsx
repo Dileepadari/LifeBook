@@ -1,3 +1,7 @@
+/**
+ * Session state: the signed-in user, login, signup and logout. The token lives
+ * in localStorage and is attached by the api client.
+ */
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, type User } from '@/lib/api';
 import { getToken, setToken, clearToken, decodeToken } from '@/lib/authToken';

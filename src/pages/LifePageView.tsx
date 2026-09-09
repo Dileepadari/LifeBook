@@ -1,3 +1,4 @@
+/** A single day's page, with sealing and navigation to the days either side. */
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

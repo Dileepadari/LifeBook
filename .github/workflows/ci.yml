@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  static:
+    name: Types and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+  build:
+    name: Build and smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The API is the half a type checker cannot see. Boot it against a
+      # throwaway database and check it actually answers, so a broken schema or
+      # a bad import fails here rather than on someone's machine.
+      - name: Boot the API and check it answers
+        env:
+          LIFEBOOK_DB: ${{ runner.temp }}/ci.sqlite
+          LIFEBOOK_JWT_SECRET: ci-only-not-a-real-secret
+          PORT: "4000"
+        run: |
+          npm start &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4000/api/health >/dev/null 2>&1; then
+              echo "API is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not come up within 30s"
+          exit 1
+
+      - name: Check the light README is in sync with README.md
+        run: |
+          npm run docs:readme-light
+          git diff --exit-code README-light.md
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      # High and critical only. The react-router advisory below that line is an
+      # open redirect that needs a user-controlled navigation target, and this
+      # app has none; see not_for_you.md.
+      - run: npm audit --audit-level=high --omit=dev

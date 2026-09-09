@@ -1,3 +1,7 @@
+/**
+ * Provider dispatch for every AI capability. Resolves which provider to use per
+ * user and falls back to the deterministic engine on any error.
+ */
 import * as builtin from './deterministic.js';
 import * as anthropic from './anthropic.js';
 import * as gemini from './gemini.js';

@@ -1,3 +1,4 @@
+/** Focus timer, the cards due today, and the generator for new study material. */
 import { Link } from 'react-router-dom';
 import { Music, Timer, Layers, Sparkles, History, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

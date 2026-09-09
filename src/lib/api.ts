@@ -1,3 +1,7 @@
+/**
+ * Typed fetch client for the API, plus the row types shared across pages.
+ * Attaches the bearer token and unwraps errors into thrown Error messages.
+ */
 import { getToken, clearToken } from './authToken';
 
 // The only place in the app that calls fetch().

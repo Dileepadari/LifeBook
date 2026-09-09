@@ -1,3 +1,7 @@
+/**
+ * Focus timer for pomodoro, deep work and long blocks. It logs what was
+ * actually sat through, not what was planned.
+ */
 import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Play, Pause, Square, RotateCcw, Zap } from 'lucide-react';

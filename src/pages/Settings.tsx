@@ -1,3 +1,6 @@
+/**
+ * AI provider and key, appearance, notifications, and data export or deletion.
+ */
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
