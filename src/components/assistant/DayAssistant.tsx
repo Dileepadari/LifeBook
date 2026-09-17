@@ -17,7 +17,7 @@ import { useDayAssistant } from '@/hooks/useLifeData';
 import { PROVIDER_LABELS, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { DayProposal, DayResolve, DayConflict, UndoToken } from '@/lib/api';
-import logoMark from '@/assets/logo-mark.png';
+import { CherryMark } from '@completeos/ui';
 
 /**
  * The day assistant: describe your day in plain language, and it becomes rows.
@@ -325,8 +325,9 @@ export function DayAssistant() {
 
   return (
     <>
-      {/* The orb. Deliberately the app's own mark rather than a generic chat
-          bubble - it is the LifeBook writing itself, not a support widget. */}
+      {/* The orb. Cherry's face - the ecosystem assistant, recognisably the
+          same character across the apps - on a neutral disc so she reads on the
+          primary button. */}
       <motion.button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -350,15 +351,15 @@ export function DayAssistant() {
               <X className="h-5 w-5" />
             </motion.span>
           ) : (
-            <motion.img
+            <motion.span
               key="orb"
-              src={logoMark}
-              alt=""
-              className="relative h-7 w-7 object-contain logo-mono"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-background"
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.6, opacity: 0 }}
-            />
+            >
+              <CherryMark size={28} />
+            </motion.span>
           )}
         </AnimatePresence>
       </motion.button>
