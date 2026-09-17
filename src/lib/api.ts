@@ -2,19 +2,19 @@
  * Typed fetch client for the API, plus the row types shared across pages.
  * Attaches the bearer token and unwraps errors into thrown Error messages.
  */
-import { getToken, clearToken } from './authToken';
+import { session, LIFEBOOK_API_BASE } from './session';
 
-// The only place in the app that calls fetch().
-//
-// In dev, VITE_API_URL is unset and everything goes to /api, which
-// vite.config.ts proxies to the Express server - one origin, no CORS. In a
-// split deployment, set VITE_API_URL to the API's base URL.
-const BASE = `${import.meta.env.VITE_API_URL || ''}/api`;
+// The only place in the app that calls fetch(). Everything now goes to the
+// shared ecosystem gateway under /apps/lifebook, authenticated with the shared
+// session's access token (held in memory, refreshed there - never in this app's
+// localStorage any more).
+const BASE = LIFEBOOK_API_BASE;
 
 async function call(path: string, init: RequestInit = {}) {
-  const token = getToken();
+  const token = await session.getAccessToken();
   const res = await fetch(`${BASE}${path}`, {
     ...init,
+    credentials: 'include',
     headers: {
       ...(init.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -22,7 +22,6 @@ async function call(path: string, init: RequestInit = {}) {
   });
 
   if (res.status === 401) {
-    clearToken();
     throw new Error('Your session has expired. Please log in again.');
   }
 
@@ -253,11 +252,9 @@ export interface AIMeta {
 
 // --- auth ---
 
+// Sign-in and sign-up are the ecosystem session's now (see contexts/AuthContext
+// and lib/session). What stays here is reading and lightly editing the profile.
 export const auth = {
-  signup: (email: string, username: string, password: string, display_name?: string): Promise<{ token: string; user: User }> =>
-    jsonCall('/auth/signup', 'POST', { email, username, password, display_name }),
-  login: (username: string, password: string): Promise<{ token: string; user: User }> =>
-    jsonCall('/auth/login', 'POST', { username, password }),
   me: async (): Promise<User> => (await call('/auth/me')).user,
   updateMe: async (patch: Partial<User>): Promise<User> => (await jsonCall('/auth/me', 'PATCH', patch)).user,
   changePassword: (current: string, next: string) => jsonCall('/auth/password', 'POST', { current, next }),

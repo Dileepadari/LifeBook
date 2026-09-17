@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { GeneratePageButton } from '@/components/lifebook/GeneratePageButton';
 import { DayAssistant } from '@/components/assistant/DayAssistant';
+import { AppSwitcher } from '@completeos/ui';
+import { session } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 
@@ -144,6 +146,9 @@ export function AppShell() {
               <SettingsIcon className="h-4 w-4 shrink-0" />
               Settings
             </NavLink>
+            <div className="pt-3">
+              <AppSwitcher current="lifebook" hasApp={(app) => session.hasApp(app)} />
+            </div>
             <div className="pt-3">
               <UserFooter />
             </div>

@@ -45,6 +45,8 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@completeos/auth-client": "*",
+    "@completeos/ui": "*",
     "@tanstack/react-query": "^5.101.4",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",

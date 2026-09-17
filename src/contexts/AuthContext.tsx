@@ -1,10 +1,11 @@
 /**
- * Session state: the signed-in user, login, signup and logout. The token lives
- * in localStorage and is attached by the api client.
+ * Session state: the signed-in user, login, signup and logout - backed by the
+ * shared ecosystem session (single sign-on). The surface is unchanged; the
+ * LifeOS profile (its own fields) is read from the gateway once authenticated.
  */
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, type User } from '@/lib/api';
-import { getToken, setToken, clearToken, decodeToken } from '@/lib/authToken';
+import { session } from '@/lib/session';
 
 interface AuthContextType {
   user: User | null;
@@ -25,37 +26,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setUser(await auth.me());
     } catch {
-      clearToken();
       setUser(null);
     }
   };
 
   useEffect(() => {
-    const token = getToken();
-    // Decoding locally first avoids a guaranteed-401 round trip on every cold
-    // load with an expired token.
-    if (!token || !decodeToken(token)) {
-      clearToken();
-      setLoading(false);
-      return;
-    }
-    refreshUser().finally(() => setLoading(false));
+    // Restore a session from the shared cookie, if there is one. Arriving from
+    // another ecosystem app already signed in lands here signed in too.
+    session.init()
+      .then((s) => (s.status === 'authenticated' ? refreshUser() : setUser(null)))
+      .finally(() => setLoading(false));
+    const unsubscribe = session.subscribe((s) => {
+      if (s.status === 'anonymous') setUser(null);
+    });
+    return unsubscribe;
   }, []);
 
   const signIn = async (username: string, password: string) => {
-    const { token, user: loggedIn } = await auth.login(username, password);
-    setToken(token);
-    setUser(loggedIn);
+    await session.login(username, password);
+    await refreshUser();
   };
 
   const signUp = async (email: string, username: string, password: string, displayName?: string) => {
-    const { token, user: created } = await auth.signup(email, username, password, displayName);
-    setToken(token);
-    setUser(created);
+    await session.signup({ email, username, password, display_name: displayName });
+    await refreshUser();
   };
 
   const signOut = () => {
-    clearToken();
+    void session.logout();
     setUser(null);
   };
 
