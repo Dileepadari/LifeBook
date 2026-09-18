@@ -16,9 +16,9 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { GeneratePageButton } from '@/components/lifebook/GeneratePageButton';
-import { DayAssistant } from '@/components/assistant/DayAssistant';
+import { Assistant } from '@completeos/ui';
 import { AppSwitcher } from '@completeos/ui';
-import { session } from '@/lib/session';
+import { session, GATEWAY_URL } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import logoMark from '@/assets/logo-mark.png';
 
@@ -227,7 +227,12 @@ export function AppShell() {
           the other on a narrow screen. */}
       <div className="fixed bottom-6 right-4 z-40 flex flex-col items-end gap-3 no-print md:right-6">
         <GeneratePageButton />
-        <DayAssistant />
+        <Assistant
+          app="lifebook"
+          baseUrl={GATEWAY_URL}
+          getAccessToken={() => session.getAccessToken()}
+          enabled={session.hasApp('lifebook')}
+        />
       </div>
     </div>
   );
