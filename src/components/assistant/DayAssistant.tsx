@@ -332,12 +332,9 @@ export function DayAssistant() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close the day assistant' : 'Tell the day assistant about your day'}
         aria-expanded={open}
-        className={cn(
-          'fixed bottom-2 right-3 z-40 cursor-pointer border-0 bg-transparent p-0 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ring sm:bottom-3 sm:right-5',
-          open ? 'pointer-events-none opacity-0' : 'opacity-100',
-        )}
+        className="fixed bottom-3 right-4 z-40 flex w-24 cursor-pointer justify-center border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <CherryFigure size={92} />
+        <CherryFigure pose={open ? 'talking' : 'idle'} size={80} />
       </button>
 
       <AnimatePresence>
@@ -351,7 +348,7 @@ export function DayAssistant() {
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24, scale: 0.97 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{ transformOrigin: 'bottom right' }}
-            className="fixed bottom-4 right-4 z-50 flex h-[min(34rem,calc(100vh-6rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl md:right-6"
+            className="fixed bottom-3 right-[7.5rem] z-50 flex h-[min(32rem,calc(100vh-5rem))] w-[min(23rem,calc(100vw-9rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
           >
             <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
               <div className="min-w-0">

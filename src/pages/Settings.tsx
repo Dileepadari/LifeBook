@@ -149,22 +149,6 @@ export default function SettingsPage() {
 function AISection({ status }: {
   status?: { provider: string; defaults: Record<string, string>; env_keys: Record<string, boolean> };
 }) {
-  const [testing, setTesting] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; detail: string } | null>(null);
-
-  const test = async () => {
-    setTesting(true);
-    setResult(null);
-    try {
-      const res = await insights.testAI();
-      setResult({ ok: res.ok, detail: res.detail });
-    } catch (err) {
-      setResult({ ok: false, detail: err instanceof Error ? err.message : 'Test failed.' });
-    } finally {
-      setTesting(false);
-    }
-  };
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -184,26 +168,9 @@ function AISection({ status }: {
         </div>
 
         {/* One key for the whole ecosystem, stored in identity and read by every
-            app. LifeBook still falls back to its built-in engine when none is set. */}
+            app - with its own Save/Clear and Test. LifeBook still falls back to
+            its built-in engine when none is set. */}
         <AiKeySettings baseUrl={GATEWAY_URL} getAccessToken={() => session.getAccessToken()} />
-
-        {result && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              'flex items-start gap-2 rounded-lg border p-3 text-sm',
-              result.ok ? 'border-success/30 bg-success/5 text-success' : 'border-destructive/30 bg-destructive/5 text-destructive',
-            )}
-          >
-            {result.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}
-            <span>{result.detail}</span>
-          </motion.div>
-        )}
-
-        <Button variant="outline" onClick={test} disabled={testing}>
-          {testing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Test connection
-        </Button>
       </CardContent>
     </Card>
   );
