@@ -17,7 +17,7 @@ import { useDayAssistant } from '@/hooks/useLifeData';
 import { PROVIDER_LABELS, plural } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { DayProposal, DayResolve, DayConflict, UndoToken } from '@/lib/api';
-import { CherryMark } from '@completeos/ui';
+import { CherryFigure } from '@completeos/ui';
 
 /**
  * The day assistant: describe your day in plain language, and it becomes rows.
@@ -325,44 +325,20 @@ export function DayAssistant() {
 
   return (
     <>
-      {/* The orb. Cherry's face - the ecosystem assistant, recognisably the
-          same character across the apps - on a neutral disc so she reads on the
-          primary button. */}
-      <motion.button
+      {/* Cherry herself, standing in the corner - the same drawn character every
+          app in the ecosystem shows. She steps aside when the panel is open. */}
+      <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close the day assistant' : 'Tell the day assistant about your day'}
         aria-expanded={open}
-        whileHover={reduceMotion ? undefined : { scale: 1.06 }}
-        whileTap={reduceMotion ? undefined : { scale: 0.94 }}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {!reduceMotion && !open && (
-          <motion.span
-            aria-hidden
-            className="absolute inset-0 rounded-full bg-primary"
-            animate={{ opacity: [0.4, 0, 0.4], scale: [1, 1.35, 1] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-          />
+        className={cn(
+          'fixed bottom-2 right-3 z-40 cursor-pointer border-0 bg-transparent p-0 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-ring sm:bottom-3 sm:right-5',
+          open ? 'pointer-events-none opacity-0' : 'opacity-100',
         )}
-        <AnimatePresence mode="wait" initial={false}>
-          {open ? (
-            <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
-              <X className="h-5 w-5" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="orb"
-              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-background"
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.6, opacity: 0 }}
-            >
-              <CherryMark size={28} />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </motion.button>
+      >
+        <CherryFigure size={92} />
+      </button>
 
       <AnimatePresence>
         {open && (
@@ -375,7 +351,7 @@ export function DayAssistant() {
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24, scale: 0.97 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{ transformOrigin: 'bottom right' }}
-            className="fixed bottom-24 right-4 z-50 flex h-[min(34rem,calc(100vh-8rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl md:right-6"
+            className="fixed bottom-4 right-4 z-50 flex h-[min(34rem,calc(100vh-6rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl md:right-6"
           >
             <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
               <div className="min-w-0">
@@ -385,6 +361,14 @@ export function DayAssistant() {
               <div className="flex shrink-0 items-center gap-1.5">
                 <Switch id="auto-apply" checked={auto} onCheckedChange={setAuto} aria-label="Apply automatically" />
                 <Label htmlFor="auto-apply" className="cursor-pointer text-xs text-muted-foreground">Auto</Label>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
+                  className="ml-1 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </header>
 

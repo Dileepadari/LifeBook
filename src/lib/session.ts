@@ -17,3 +17,5 @@ export const session = createSessionClient({ baseUrl: GATEWAY });
 
 /** Where every LifeOS API call is rooted, now that the app lives on the gateway. */
 export const LIFEBOOK_API_BASE = `${GATEWAY}/apps/lifebook`;
+/** The gateway root, for cross-app endpoints like the shared AI-key store. */
+export const GATEWAY_URL = GATEWAY;

@@ -20,6 +20,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useSettings, useSaveSettings, useAIStatus } from '@/hooks/useLifeData';
+import { AiKeySettings } from '@completeos/ui';
+import { session, GATEWAY_URL } from '@/lib/session';
 import { useTheme, colorPalettes, type ColorPalette } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { insights, auth } from '@/lib/api';
@@ -50,7 +52,7 @@ export default function SettingsPage() {
         <p className="mt-1 text-muted-foreground">How LifeBook looks, thinks and stores your data.</p>
       </header>
 
-      <AISection settings={settings} status={aiStatus} onSave={(p) => save.mutateAsync(p)} />
+      <AISection status={aiStatus} />
 
       <Card>
         <CardHeader className="pb-2">
@@ -144,64 +146,17 @@ export default function SettingsPage() {
  * sent up, stored server-side, and only ever comes back as a masked hint, so a
  * screenshot of this page never leaks it.
  */
-function AISection({
-  settings, status, onSave,
-}: {
-  settings: { ai_provider: string; ai_model: string | null; has_ai_key: boolean; ai_key_hint: string | null };
+function AISection({ status }: {
   status?: { provider: string; defaults: Record<string, string>; env_keys: Record<string, boolean> };
-  onSave: (patch: Record<string, unknown>) => Promise<unknown>;
 }) {
-  const [provider, setProvider] = useState(settings.ai_provider);
-  const [model, setModel] = useState(settings.ai_model || '');
-  const [key, setKey] = useState('');
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; detail: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [models, setModels] = useState<string[] | null>(null);
-
-  useEffect(() => {
-    setProvider(settings.ai_provider);
-    setModel(settings.ai_model || '');
-  }, [settings.ai_provider, settings.ai_model]);
-
-  // Model names move faster than any list we could ship, and a stale name is a
-  // valid key that fails on every request - which is a genuinely confusing way
-  // to be broken. So ask the provider what this key can actually call.
-  useEffect(() => {
-    if (provider === 'builtin' || (!settings.has_ai_key && !key.trim())) { setModels(null); return; }
-    let live = true;
-    insights.aiModels(key.trim() ? { provider, apiKey: key.trim() } : { provider })
-      .then((res) => { if (live) setModels(res.models); })
-      .catch(() => { if (live) setModels(null); });
-    return () => { live = false; };
-  }, [provider, settings.has_ai_key, key]);
-
-  const defaultModel = status?.defaults?.[provider] || '';
-  const modelUnknown = Boolean(model.trim() && models?.length && !models.includes(model.trim()));
-
-  const commit = async () => {
-    setSaving(true);
-    try {
-      const patch: Record<string, unknown> = { ai_provider: provider, ai_model: model.trim() || null };
-      // Only send the key when the user actually typed one - an untouched field
-      // must not blank out a saved key.
-      if (key.trim()) patch.ai_key = key.trim();
-      await onSave(patch);
-      setKey('');
-      setResult(null);
-      toast.success('AI settings saved');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const test = async () => {
     setTesting(true);
     setResult(null);
     try {
-      const res = await insights.testAI(
-        key.trim() ? { provider, apiKey: key.trim(), model: model.trim() || undefined } : undefined,
-      );
+      const res = await insights.testAI();
       setResult({ ok: res.ok, detail: res.detail });
     } catch (err) {
       setResult({ ok: false, detail: err instanceof Error ? err.message : 'Test failed.' });
@@ -226,78 +181,11 @@ function AISection({
             <Sparkles className="h-3 w-3" />
             {status ? PROVIDER_LABELS[status.provider] || status.provider : '...'}
           </Badge>
-          {settings.has_ai_key && (
-            <Badge variant="outline" className="gap-1.5 font-mono text-[0.65rem]">
-              <KeyRound className="h-3 w-3" /> {settings.ai_key_hint}
-            </Badge>
-          )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>Provider</Label>
-            <Select value={provider} onValueChange={(v) => { setProvider(v); setResult(null); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Automatic</SelectItem>
-                <SelectItem value="anthropic">Claude (Anthropic)</SelectItem>
-                <SelectItem value="gemini">Gemini (Google)</SelectItem>
-                <SelectItem value="builtin">Built-in engine only</SelectItem>
-              </SelectContent>
-            </Select>
-            {provider === 'auto' && (
-              <p className="text-xs text-muted-foreground">
-                Uses whichever key it finds - a saved key first, then the server's environment.
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="model">Model</Label>
-            <Input
-              id="model"
-              list="ai-model-options"
-              value={model}
-              onChange={(e) => { setModel(e.target.value); setResult(null); }}
-              placeholder={defaultModel || 'provider default'}
-              disabled={provider === 'builtin'}
-              aria-invalid={modelUnknown || undefined}
-              className={cn(modelUnknown && 'border-destructive focus-visible:ring-destructive')}
-            />
-            <datalist id="ai-model-options">
-              {(models || []).map((m) => <option key={m} value={m} />)}
-            </datalist>
-            {modelUnknown ? (
-              <p className="text-xs text-destructive">
-                This key cannot call {model.trim()}. Pick one from the list, or clear the field to use {defaultModel}.
-              </p>
-            ) : defaultModel && !model ? (
-              <p className="text-xs text-muted-foreground">
-                Defaults to {defaultModel}.{models?.length ? ` ${models.length} models available on this key.` : ''}
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        {provider !== 'builtin' && (
-          <div className="space-y-1.5">
-            <Label htmlFor="apikey">API key</Label>
-            <Input
-              id="apikey"
-              type="password"
-              value={key}
-              onChange={(e) => { setKey(e.target.value); setResult(null); }}
-              placeholder={settings.has_ai_key ? 'A key is saved - type to replace it' : 'sk-ant-... or an AIza... key'}
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              Stored on your own server and never returned to the browser. The page generator calls
-              the provider server-side, so the key is never in a page someone could screenshot.
-              {status?.env_keys?.anthropic && ' An Anthropic key is also set in the environment.'}
-              {status?.env_keys?.gemini && ' A Gemini key is also set in the environment.'}
-            </p>
-          </div>
-        )}
+        {/* One key for the whole ecosystem, stored in identity and read by every
+            app. LifeBook still falls back to its built-in engine when none is set. */}
+        <AiKeySettings baseUrl={GATEWAY_URL} getAccessToken={() => session.getAccessToken()} />
 
         {result && (
           <motion.div
@@ -313,23 +201,9 @@ function AISection({
           </motion.div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={commit} disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-          </Button>
-          <Button variant="outline" onClick={test} disabled={testing || provider === 'builtin'}>
-            {testing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Test connection
-          </Button>
-          {settings.has_ai_key && (
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={async () => { await onSave({ ai_key: '' }); toast.success('Key removed'); }}
-            >
-              Remove key
-            </Button>
-          )}
-        </div>
+        <Button variant="outline" onClick={test} disabled={testing}>
+          {testing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Test connection
+        </Button>
       </CardContent>
     </Card>
   );
