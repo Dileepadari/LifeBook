@@ -28,7 +28,7 @@ Technical reference for the LifeBook codebase: architecture, auth model, data mo
 
 ## Tech stack
 
-**Frontend** - React 19, Vite 7, TypeScript, Tailwind v4 (no JS config; tokens live in `src/index.css`), shadcn/ui on Radix, TanStack Query, React Router 6, Recharts, framer-motion, dnd-kit, sonner. Path alias `@/` → `src/`.
+**Frontend** - React 19, Vite 7, TypeScript, Tailwind v4 (no JS config; tokens live in `src/index.css`), shadcn/ui on Radix, TanStack Query, React Router 6, Recharts, framer-motion, dnd-kit, sonner. Path alias `@/` > `src/`.
 
 **Backend** - Node 20+, Express 4, better-sqlite3 (synchronous, single file), bcryptjs, jsonwebtoken, multer. Plain ESM JavaScript, no build step.
 
@@ -111,7 +111,7 @@ Roughly thirty tables in six groups:
 
 ## The AI layer
 
-`server/ai/index.js` is the dispatcher. Resolution order for a user: their explicit choice in Settings → their saved key → the process env key → `builtin`.
+`server/ai/index.js` is the dispatcher. Resolution order for a user: their explicit choice in Settings > their saved key > the process env key > `builtin`.
 
 ```
 generateLifePage / generateInsights / generateFlashcards
