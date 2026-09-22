@@ -96,11 +96,23 @@ interface SpeechRecognitionLike extends EventTarget {
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
 }
-declare global {
-  interface Window {
+/**
+ * The recogniser constructor this browser offers, if any.
+ *
+ * Read off `window` through a cast rather than by augmenting the `Window`
+ * interface. TypeScript's DOM lib now declares `SpeechRecognition` itself, and
+ * a second declaration with a different type is an error (TS2717) rather than a
+ * merge. The vendor-prefixed alias is still not in the lib, and neither is
+ * declared optional there, so the cast is also what keeps the absent case
+ * honest.
+ */
+function speechRecognitionCtor(): (new () => SpeechRecognitionLike) | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const w = window as unknown as {
     SpeechRecognition?: new () => SpeechRecognitionLike;
     webkitSpeechRecognition?: new () => SpeechRecognitionLike;
-  }
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
 }
 
 /**
@@ -119,7 +131,7 @@ function useDictation(onText: (text: string) => void) {
   const [error, setError] = useState<string | null>(null);
   const recognition = useRef<SpeechRecognitionLike | null>(null);
   const base = useRef('');
-  const supported = typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const supported = Boolean(speechRecognitionCtor());
 
   const stop = () => {
     recognition.current?.stop();
@@ -132,7 +144,7 @@ function useDictation(onText: (text: string) => void) {
   useEffect(() => () => recognition.current?.stop(), []);
 
   const start = (current: string) => {
-    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const Ctor = speechRecognitionCtor();
     if (!Ctor) return;
     setError(null);
     base.current = current;
