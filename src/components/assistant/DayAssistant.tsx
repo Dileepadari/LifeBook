@@ -338,7 +338,7 @@ export function DayAssistant() {
   return (
     <>
       {/* Cherry herself, standing in the corner - the same drawn character every
-          app in the ecosystem shows. She steps aside when the panel is open. */}
+          app in the ecosystem shows. They step aside when the panel is open. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
